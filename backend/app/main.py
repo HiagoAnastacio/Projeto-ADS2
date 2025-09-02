@@ -1,0 +1,1 @@
+# Ponto de entrada da aplicação e o Controller da arquitetura MVC.

@@ -1,0 +1,2 @@
+# Arquivo de modelo para garantir que a tipagem dos dados seja consistente em toda a aplicação.
+# É uma das partes do model da arquitetura MVC, pois molda a um dos aspectos com a interação com os dados.
