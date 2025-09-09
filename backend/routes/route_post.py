@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Path, Depends
 from pydantic import BaseModel
 from utils.function_execute import execute
-from model.db_model_for_tabel import get_model_for_table
+from model.model_resolver import get_model_for_table
 
 router = APIRouter()
 
