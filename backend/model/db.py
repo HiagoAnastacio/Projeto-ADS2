@@ -47,12 +47,6 @@ class Database:
    
     # Executar comando no banco de dados
     def execute_comand(self, sql: str, params: Optional[Tuple[Any, ...]] = None) -> Optional[Union[List[dict], Any]]:
-        """
-        Executa um comando no banco de dados. Pode ser usado para consultas (SELECT) ou modificações (INSERT, UPDATE, DELETE).
-        sql: Comando SQL a ser executado.
-        params: Parâmetros opcionais para o comando SQL.
-        return: Resultados da consulta ou o número de linhas afetadas. Retorna None em caso de erro.
-        """
         if self.connection is None:
             print('Conexão ao banco de dados não estabelecida.')
             return None
@@ -66,7 +60,6 @@ class Database:
                 self.connection.commit()
                 return cursor.rowcount
         except Error as e:
-            print(f'Erro de execução: {e}')
-            return None
-        finally:
-            cursor.close()
+            # Não capture a exceção aqui, deixe-a propagar
+            # A função `function_execute` já trata a exceção
+            raise e
