@@ -21,4 +21,4 @@ async def validate_body(table_name: str, request: Request) -> Dict[str, Any]:
     except ValidationError as e:
         raise HTTPException(status_code=422, detail=e.errors())
     except Exception as e:
-        raise HTTPException(status_code=400, detail="Corpo da requisição inválido.")
+        raise HTTPException(status_code=400, detail=f'Corpo da requisição inválido. Erro: {e}')
