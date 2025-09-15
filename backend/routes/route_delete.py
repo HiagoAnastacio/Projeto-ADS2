@@ -5,7 +5,8 @@ from utils.function_execute import execute
 router = APIRouter()
 
 # Lista de tabelas permitidas para exclusão
-TABLES_WHITELIST = ["hero", "map", "role", "rank", "game_mode"]
+TABLES_WHITELIST = ["hero", "map", "role", "rank", "game_mode", "hero_win", "hero_pick",
+                    "hero_map_win", "hero_map_pick", "hero_rank_win", "hero_rank_pick",]
 
 @router.delete("/delete/{table_name}/{item_id}", tags=["Generic Data Management"])
 async def delete_data(

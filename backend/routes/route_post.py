@@ -4,15 +4,13 @@ from utils.function_execute import execute
 from model.model_resolver import get_model_for_table
 import logging
 
-# Configuração de logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
 router = APIRouter()
 
 @router.post("/insert/{table_name}", tags=["Generic Data Management"])
 async def insert_data(
     table_name: str = Path(..., description="Nome da tabela para inserção."),
-    request: Request = None  # Recebe o objeto de requisição completo
+    request = Request
 ):
     """
     Insere um novo item em uma tabela autorizada com base em um modelo Pydantic.
@@ -20,9 +18,9 @@ async def insert_data(
     try:
         # Tenta obter o modelo Pydantic em tempo de execução
         model: BaseModel = get_model_for_table(table_name)
-    except ValueError as e:
+    except HTTPException as e:
         # Se não houver modelo, retorna erro 400
-        raise HTTPException(status_code=400, detail=str(e))
+        raise e
 
     try:
         # Lê o corpo da requisição como JSON
@@ -38,7 +36,7 @@ async def insert_data(
         # Outros erros de leitura do JSON
         logging.error(f"Erro ao processar o corpo da requisição: {e}")
         raise HTTPException(status_code=400, detail="Corpo da requisição inválido.")
-
+    
     # Converte o modelo Pydantic validado para um dicionário para a consulta SQL
     columns = ", ".join(data_dict.keys())
     placeholders = ", ".join(["%s"] * len(data_dict))

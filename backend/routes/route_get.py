@@ -4,7 +4,8 @@ from utils.function_execute import execute
 router = APIRouter()
 
 # Lista de tabelas que podem ser consultadas pela API
-TABLES_WHITELIST = ["hero", "map", "role", "rank", "game_mode"]
+TABLES_WHITELIST = ["hero", "map", "role", "rank", "game_mode", "hero_win", "hero_pick",
+                    "hero_map_win", "hero_map_pick", "hero_rank_win", "hero_rank_pick",]
 
 @router.get("/get/{table_name}", tags=["Generic Data Management"])
 async def get_tabela(table_name: str = Path(..., description="Nome da tabela para consulta")):
