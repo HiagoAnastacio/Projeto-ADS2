@@ -1,23 +1,29 @@
-# Função para executar comandos SQL no banco de dados de maneira reutilizável.
-from fastapi import FastAPI, HTTPException
-from model.db import Database
+# FLUXO E A LÓGICA:
+# 1. Inicializa o objeto de conexão 'db' (Escopo Global/Módulo).
+# 2. A função `execute` recebe o `sql` e `params` da rota (Escopo de Requisição).
+# 3. `execute` encapsula o fluxo de conexão: `db.connect()`, `db.execute_comand()`, `db.disconnect()`.
+# 4. Trata erros do DB (propagados de `db.py`), transformando-os em `HTTPException 500`.
+# A razão de existir: Camada DAO (Data Access Object) centralizada. Garante que todas as interações com o DB sigam o mesmo fluxo de conexão e tratamento de erros.
 
-app = FastAPI()
+from fastapi import HTTPException # Razão: Para levantar erros HTTP para a rota em caso de falha do DB (500 Internal Server Error).
+from model.db import Database # Razão: Classe que armazena credenciais e gerencia a conexão MySQL.
+
+# Variável 'db' (Escopo Global/Módulo): Objeto de conexão criado UMA VEZ no startup da aplicação.
+# Armazena as credenciais lidas do .env.
 db = Database()
 
-def execute(sql: str, params: tuple = None):
-    """
-    Executa um comando SQL usando a conexão do banco.
-    1. Conecta ao banco.
-    2. Executa o comando SQL com os parâmetros.
-    3. Desconecta do banco.
-    4. Retorna o resultado ou lança exceção em caso de erro.
-    """
+def execute(sql: str, params: tuple = None): # Variáveis 'sql' e 'params' (Escopo de Requisição): Query e valores enviados da rota.
+    """Executa um comando SQL. Conecta, executa, desconecta, e gerencia erros."""
     try:
-        db.connect()
-        result = db.execute_comand(sql, params)  # Executa o comando SQL
-        db.disconnect()
-        return result  # Retorna o resultado da consulta
+        # 1. Gerenciamento da Conexão (Escopo de Requisição)
+        db.connect() # Abre a conexão com o banco de dados.
+        # Variável 'result' (Escopo de Requisição): Dados retornados ou lastrowid/rowcount.
+        result = db.execute_comand(sql, params) # Executa o SQL (db.py lida com o COMMIT).
+        db.disconnect() # Fecha a conexão e o cursor (CRÍTICO para não estourar o limite de conexões do DB).
+        return result 
     except Exception as e:
-        db.disconnect()
-        raise HTTPException(status_code=500, detail=str(e))  # Lança erro HTTP em caso de exceção
+        # Garante que a conexão seja sempre fechada, mesmo em caso de erro.
+        # Chamada defensiva caso o erro ocorra antes do db.disconnect().
+        db.disconnect() 
+        # Erro 500 (Internal Server Error) em caso de falha de conexão, deadlock, ou erro de sintaxe SQL.
+        raise HTTPException(status_code=500, detail=f"Erro de Banco de Dados: {e}")

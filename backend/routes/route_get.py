@@ -1,25 +1,50 @@
-from fastapi import APIRouter, HTTPException, Path
-from utils.function_execute import execute
+# FLUXO E A LÓGICA:
+# 1. Recebe `table_name` da URL (Escopo de Requisição).
+# 2. Valida `table_name` contra a `TABLES_WHITELIST` (Segurança CRÍTICA).
+# 3. Constrói e executa a query `SELECT * FROM {table_name}`.
+# 4. Retorna os resultados do DB como JSON.
+# A razão de existir: Ponto de entrada para a operação de leitura (GET) de forma GENÉRICA e protegida.
 
+from fastapi import APIRouter, HTTPException, Path, Depends # Razão: Roteamento, tratamento de erros, parâmetros e dependências.
+from utils.function_execute import execute # Razão: Importa a função DAO para acesso ao DB.
+from fastapi_limiter.depends import RateLimiter # Razão: Importa o limitador de taxa.
+
+# Variável 'router' (Escopo Global/Módulo).
 router = APIRouter()
 
-# Lista de tabelas que podem ser consultadas pela API
+# Variável 'TABLES_WHITELIST' (Escopo Global/Módulo): Lista de tabelas permitidas (Baseado no seu esquema do DB).
+# Razão: SEGURANÇA. Impede que o usuário tente acessar tabelas não expostas na API.
 TABLES_WHITELIST = ["hero", "map", "role", "rank", "game_mode", "hero_win", "hero_pick",
                     "hero_map_win", "hero_map_pick", "hero_rank_win", "hero_rank_pick",]
 
-@router.get("/get/{table_name}", tags=["Generic Data Management"])
-async def get_tabela(table_name: str = Path(..., description="Nome da tabela para consulta")):
-    """
-    Consulta genérica e segura para tabelas autorizadas.
-    O nome da tabela é validado antes de ser usado.
-    """
+# Rota para consulta genérica: /get/{table_name}
+# Rate Limiting: 20 requisições a cada 60 segundos (limite mais folgado para GETs)
+@router.get("/get/{table_name}", tags=["Generic Data Management"],
+            dependencies=[Depends(RateLimiter(times=20, seconds=60))]) # Rate Limiter ATIVADO (Essencial para GETs).
+async def get_tabela(
+    # Variável 'table_name' (Escopo de Requisição): Nome da tabela.
+    table_name: str = Path(..., description="Nome da tabela para consulta")
+):
+    """Consulta genérica e segura para tabelas autorizadas, protegida por Rate Limiting."""
+    
+    # 1. Verificação de Segurança (Whitelist)
     if table_name not in TABLES_WHITELIST:
+        # Erro 400 se a tabela não estiver na lista branca.
         raise HTTPException(status_code=400, detail=f"A tabela '{table_name}' não é válida para esta consulta.")
     
     try:
-        # A consulta agora é segura, pois 'table_name' vem de uma lista interna, não da URL.
+        # A consulta é construída dinamicamente.
         sql = f"SELECT * FROM {table_name}"
-        result = execute(sql=sql)
+        # Variável 'result' (Escopo de Requisição): Dados retornados do DB (lista de dicionários).
+        result = execute(sql=sql) # Envia para a camada DAO.
+        
+        if result is None:
+            # Erro 404 se o DB não retornar dados (ex: tabela vazia ou falha silenciosa).
+            raise HTTPException(status_code=404, detail=f"Nenhum dado encontrado para a tabela '{table_name}'.")
+
         return result
+    except HTTPException as e:
+        raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao buscar dados na tabela {table_name}: {e}")
+        # O execute.py lida com a maioria dos erros DB, mas este catch final garante a robustez.
+        raise HTTPException(status_code=500, detail=f"Erro interno ao processar a consulta: {e}")
