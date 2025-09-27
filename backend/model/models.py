@@ -1,6 +1,4 @@
-# app/model/models.py
-
-# FLUXO DE DADOS E LÓGICA NO FIM DO ARQUIVO:
+# FLUXO E A LÓGICA:
 # 1. Este módulo define as estruturas de dados (Schemas) para toda a API.
 # 2. As classes são importadas no **model_resolver.py** (Escopo Global/Módulo).
 # 3. Uma classe específica (ex: HeroBase) é enviada para **validate_body** em tempo de requisição.
