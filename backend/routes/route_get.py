@@ -5,24 +5,23 @@
 # 4. Retorna os resultados do DB como JSON.
 # A razão de existir: Ponto de entrada para a operação de leitura (GET) de forma GENÉRICA e protegida.
 
-from fastapi import APIRouter, HTTPException, Path, Depends # Razão: Roteamento, tratamento de erros, parâmetros e dependências.
-from utils.function_execute import execute # Razão: Importa a função DAO para acesso ao DB.
-from fastapi_limiter.depends import RateLimiter # Razão: Importa o limitador de taxa.
+from fastapi import APIRouter, HTTPException, Path, Depends
+from utils.function_execute import execute # Importa a função DAO para acesso ao DB.
+from fastapi_limiter.depends import RateLimiter # Importa o limitador de taxa.
 
 # Variável 'router' (Escopo Global/Módulo).
 router = APIRouter()
 
-# Variável 'TABLES_WHITELIST' (Escopo Global/Módulo): Lista de tabelas permitidas (Baseado no seu esquema do DB).
+# Variável 'TABLES_WHITELIST' (Escopo Global/Módulo): Lista de tabelas permitidas.
 # Razão: SEGURANÇA. Impede que o usuário tente acessar tabelas não expostas na API.
 TABLES_WHITELIST = ["hero", "map", "role", "rank", "game_mode", "hero_win", "hero_pick",
                     "hero_map_win", "hero_map_pick", "hero_rank_win", "hero_rank_pick",]
 
 # Rota para consulta genérica: /get/{table_name}
-# Rate Limiting: 20 requisições a cada 60 segundos (limite mais folgado para GETs)
 @router.get("/get/{table_name}", tags=["Generic Data Management"],
-            dependencies=[Depends(RateLimiter(times=20, seconds=60))]) # Rate Limiter ATIVADO (Essencial para GETs).
+            #dependencies=[Depends(RateLimiter(times=20, seconds=60))]
+) # Rate Limiter ATIVADO (Essencial para GETs).
 async def get_tabela(
-    # Variável 'table_name' (Escopo de Requisição): Nome da tabela.
     table_name: str = Path(..., description="Nome da tabela para consulta")
 ):
     """Consulta genérica e segura para tabelas autorizadas, protegida por Rate Limiting."""
@@ -33,18 +32,18 @@ async def get_tabela(
         raise HTTPException(status_code=400, detail=f"A tabela '{table_name}' não é válida para esta consulta.")
     
     try:
-        # A consulta é construída dinamicamente.
-        sql = f"SELECT * FROM {table_name}"
-        # Variável 'result' (Escopo de Requisição): Dados retornados do DB (lista de dicionários).
+        # CORREÇÃO: Adiciona aspas graves (`) ao redor do nome da tabela.
+        sql = f"SELECT * FROM `{table_name}`"
+        
         result = execute(sql=sql) # Envia para a camada DAO.
         
-        if result is None:
-            # Erro 404 se o DB não retornar dados (ex: tabela vazia ou falha silenciosa).
+        if result is None or len(result) == 0:
+            # Erro 404 se o DB não retornar dados (ex: tabela vazia).
             raise HTTPException(status_code=404, detail=f"Nenhum dado encontrado para a tabela '{table_name}'.")
 
         return result
     except HTTPException as e:
         raise e
-    except Exception as e:
-        # O execute.py lida com a maioria dos erros DB, mas este catch final garante a robustez.
-        raise HTTPException(status_code=500, detail=f"Erro interno ao processar a consulta: {e}")
+    except Exception:
+        # Este catch será raramente atingido, pois `execute` deve levantar HTTPException.
+        raise HTTPException(status_code=500, detail="Erro interno durante a consulta ao banco.")

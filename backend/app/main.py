@@ -26,5 +26,6 @@ app = FastAPI()
 app.include_router(route_get.router, prefix="/api")            
 app.include_router(route_post.router, prefix="/api")           
 app.include_router(route_update.router, prefix="/api")         
-app.include_router(route_delete.router, prefix="/api")         
+app.include_router(route_delete.router, prefix="/api")  
+       
 app.include_router(route_schema_models.router, prefix="/api")

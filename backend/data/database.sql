@@ -27,8 +27,9 @@ DROP TABLE IF EXISTS `game_mode`;
 CREATE TABLE `game_mode` (
   `game_mode_id` int NOT NULL AUTO_INCREMENT,
   `game_mode_name` varchar(45) NOT NULL,
+  `date_of_the_data` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`game_mode_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -39,23 +40,6 @@ LOCK TABLES `game_mode` WRITE;
 /*!40000 ALTER TABLE `game_mode` DISABLE KEYS */;
 /*!40000 ALTER TABLE `game_mode` ENABLE KEYS */;
 UNLOCK TABLES;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `game_mode_AFTER_DELETE` AFTER DELETE ON `game_mode` FOR EACH ROW BEGIN
-	DELETE FROM map WHERE game_mode_id = OLD.game_mode_id;
-END */;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `hero`
@@ -66,10 +50,14 @@ DROP TABLE IF EXISTS `hero`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `hero` (
   `hero_id` int NOT NULL AUTO_INCREMENT,
+  `role_id` int NOT NULL,
   `hero_name` varchar(45) NOT NULL,
-  `hero_role` varchar(10) NOT NULL,
-  PRIMARY KEY (`hero_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `hero_icon_img_link` varchar(10000) DEFAULT NULL,
+  `date_of_the_data` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`hero_id`),
+  KEY `fk_hero_role_idx` (`role_id`),
+  CONSTRAINT `fk_hero_role` FOREIGN KEY (`role_id`) REFERENCES `role` (`role_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -80,26 +68,6 @@ LOCK TABLES `hero` WRITE;
 /*!40000 ALTER TABLE `hero` DISABLE KEYS */;
 /*!40000 ALTER TABLE `hero` ENABLE KEYS */;
 UNLOCK TABLES;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `hero_AFTER_DELETE` AFTER DELETE ON `hero` FOR EACH ROW BEGIN
-	DELETE FROM hero_map_pick WHERE hero_id = OLD.hero_id;
-    DELETE FROM hero_map_win WHERE hero_id = OLD.hero_id;
-    DELETE FROM hero_pick WHERE hero_id = OLD.hero_id;
-    DELETE FROM hero_win WHERE hero_id = OLD.hero_id;
-END */;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `hero_map_pick`
@@ -112,13 +80,13 @@ CREATE TABLE `hero_map_pick` (
   `hero_map_pick_id` int NOT NULL AUTO_INCREMENT,
   `hero_id` int NOT NULL,
   `map_id` int NOT NULL,
-  `pick_in_map` decimal(2,2) NOT NULL,
+  `pick_in_map` decimal(4,2) NOT NULL,
   `date_of_the_data` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`hero_map_pick_id`),
   KEY `hero_id` (`hero_id`),
   KEY `map_id` (`map_id`),
-  CONSTRAINT `fk_hero_map_pick_hero` FOREIGN KEY (`hero_id`) REFERENCES `hero` (`hero_id`),
-  CONSTRAINT `fk_hero_map_pick_map` FOREIGN KEY (`map_id`) REFERENCES `map` (`map_id`)
+  CONSTRAINT `fk_hero_map_pick_hero` FOREIGN KEY (`hero_id`) REFERENCES `hero` (`hero_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_hero_map_pick_map` FOREIGN KEY (`map_id`) REFERENCES `map` (`map_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -142,13 +110,13 @@ CREATE TABLE `hero_map_win` (
   `hero_map_win_id` int NOT NULL AUTO_INCREMENT,
   `hero_id` int NOT NULL,
   `map_id` int NOT NULL,
-  `win_rate` decimal(2,2) NOT NULL,
+  `win_rate` decimal(4,2) NOT NULL,
   `date_of_the_data` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`hero_map_win_id`),
   KEY `hero_id_idx` (`hero_id`),
   KEY `map_id_idx` (`map_id`),
-  CONSTRAINT `fk_hero_map_win_hero` FOREIGN KEY (`hero_id`) REFERENCES `hero` (`hero_id`),
-  CONSTRAINT `fk_hero_map_win_map` FOREIGN KEY (`map_id`) REFERENCES `map` (`map_id`)
+  CONSTRAINT `fk_hero_map_win_hero` FOREIGN KEY (`hero_id`) REFERENCES `hero` (`hero_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_hero_map_win_map` FOREIGN KEY (`map_id`) REFERENCES `map` (`map_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -171,10 +139,11 @@ DROP TABLE IF EXISTS `hero_pick`;
 CREATE TABLE `hero_pick` (
   `hero_pick_id` int NOT NULL AUTO_INCREMENT,
   `hero_id` int NOT NULL,
-  `pick_rate` decimal(2,2) NOT NULL,
+  `pick_rate` decimal(4,2) NOT NULL,
+  `date_of_the_data` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`hero_pick_id`),
   KEY `hero_id_idx` (`hero_id`),
-  CONSTRAINT `fk_hero_pick_hero` FOREIGN KEY (`hero_id`) REFERENCES `hero` (`hero_id`)
+  CONSTRAINT `fk_hero_pick_hero` FOREIGN KEY (`hero_id`) REFERENCES `hero` (`hero_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -188,6 +157,132 @@ LOCK TABLES `hero_pick` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `hero_rank_map_pick`
+--
+
+DROP TABLE IF EXISTS `hero_rank_map_pick`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `hero_rank_map_pick` (
+  `hero_rank_map_pick_id` int NOT NULL AUTO_INCREMENT,
+  `hero_id` int NOT NULL,
+  `map_id` int NOT NULL,
+  `rank_id` int NOT NULL,
+  `pick_rate` decimal(4,2) NOT NULL,
+  `date_of_the_data` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`hero_rank_map_pick_id`),
+  KEY `fk_hero_rank_map_pick_hero_idx` (`hero_id`),
+  KEY `fk_hero_rank_map_pick_map_idx` (`map_id`),
+  KEY `fk_hero_rank_map_pick_rank_idx` (`rank_id`),
+  CONSTRAINT `fk_hero_rank_map_pick_hero` FOREIGN KEY (`hero_id`) REFERENCES `hero` (`hero_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_hero_rank_map_pick_map` FOREIGN KEY (`map_id`) REFERENCES `map` (`map_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_hero_rank_map_pick_rank` FOREIGN KEY (`rank_id`) REFERENCES `rank` (`rank_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `hero_rank_map_pick`
+--
+
+LOCK TABLES `hero_rank_map_pick` WRITE;
+/*!40000 ALTER TABLE `hero_rank_map_pick` DISABLE KEYS */;
+/*!40000 ALTER TABLE `hero_rank_map_pick` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `hero_rank_map_win`
+--
+
+DROP TABLE IF EXISTS `hero_rank_map_win`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `hero_rank_map_win` (
+  `hero_rank_map_win_id` int NOT NULL AUTO_INCREMENT,
+  `hero_id` int NOT NULL,
+  `map_id` int NOT NULL,
+  `rank_id` int NOT NULL,
+  `win_rate` decimal(4,2) NOT NULL,
+  `date_of_the_data` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`hero_rank_map_win_id`),
+  KEY `fk_hero_rank_map_win_hero_idx` (`hero_id`),
+  KEY `fk_hero_rank_map_win_map_idx` (`map_id`),
+  KEY `fk_hero_rank_map_win_rank_idx` (`rank_id`),
+  CONSTRAINT `fk_hero_rank_map_win_hero` FOREIGN KEY (`hero_id`) REFERENCES `hero` (`hero_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_hero_rank_map_win_map` FOREIGN KEY (`map_id`) REFERENCES `map` (`map_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_hero_rank_map_win_rank` FOREIGN KEY (`rank_id`) REFERENCES `rank` (`rank_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `hero_rank_map_win`
+--
+
+LOCK TABLES `hero_rank_map_win` WRITE;
+/*!40000 ALTER TABLE `hero_rank_map_win` DISABLE KEYS */;
+/*!40000 ALTER TABLE `hero_rank_map_win` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `hero_rank_pick`
+--
+
+DROP TABLE IF EXISTS `hero_rank_pick`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `hero_rank_pick` (
+  `hero_rank_pick_id` int NOT NULL AUTO_INCREMENT,
+  `hero_id` int NOT NULL,
+  `rank_id` int NOT NULL,
+  `pick_rate` decimal(4,2) NOT NULL,
+  `date_of_the_data` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`hero_rank_pick_id`),
+  KEY `fk_hero_rank_pick_hero_idx` (`hero_id`),
+  KEY `fk_hero_rank_pick_rank_idx` (`rank_id`),
+  CONSTRAINT `fk_hero_rank_pick_hero` FOREIGN KEY (`hero_id`) REFERENCES `hero` (`hero_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_hero_rank_pick_rank` FOREIGN KEY (`rank_id`) REFERENCES `rank` (`rank_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `hero_rank_pick`
+--
+
+LOCK TABLES `hero_rank_pick` WRITE;
+/*!40000 ALTER TABLE `hero_rank_pick` DISABLE KEYS */;
+/*!40000 ALTER TABLE `hero_rank_pick` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `hero_rank_win`
+--
+
+DROP TABLE IF EXISTS `hero_rank_win`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `hero_rank_win` (
+  `hero_rank_win_id` int NOT NULL AUTO_INCREMENT,
+  `hero_id` int NOT NULL,
+  `rank_id` int NOT NULL,
+  `win_rate` decimal(4,2) NOT NULL,
+  `date_of_the_data` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`hero_rank_win_id`),
+  KEY `fk_hero_rank_win_hero_idx` (`hero_id`),
+  KEY `fk_hero_rank_win_rank_idx` (`rank_id`),
+  CONSTRAINT `fk_hero_rank_win_hero` FOREIGN KEY (`hero_id`) REFERENCES `hero` (`hero_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_hero_rank_win_rank` FOREIGN KEY (`rank_id`) REFERENCES `rank` (`rank_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `hero_rank_win`
+--
+
+LOCK TABLES `hero_rank_win` WRITE;
+/*!40000 ALTER TABLE `hero_rank_win` DISABLE KEYS */;
+/*!40000 ALTER TABLE `hero_rank_win` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `hero_win`
 --
 
@@ -197,12 +292,13 @@ DROP TABLE IF EXISTS `hero_win`;
 CREATE TABLE `hero_win` (
   `hero_win_id` int NOT NULL AUTO_INCREMENT,
   `hero_id` int NOT NULL,
-  `win_total` decimal(2,2) NOT NULL,
+  `win_rate` decimal(4,2) NOT NULL,
+  `date_of_the_data` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`hero_win_id`),
   KEY `hero_id_idx` (`hero_id`),
   KEY `hero_id` (`hero_id`),
-  CONSTRAINT `fk_hero_win_hero` FOREIGN KEY (`hero_id`) REFERENCES `hero` (`hero_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  CONSTRAINT `fk_hero_win_hero` FOREIGN KEY (`hero_id`) REFERENCES `hero` (`hero_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -225,10 +321,11 @@ CREATE TABLE `map` (
   `map_id` int NOT NULL AUTO_INCREMENT,
   `game_mode_id` int NOT NULL,
   `map_name` varchar(45) NOT NULL,
+  `date_of_the_data` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`map_id`),
   KEY `fk_map_game_mode_idx` (`game_mode_id`),
-  CONSTRAINT `fk_map_game_mode` FOREIGN KEY (`game_mode_id`) REFERENCES `game_mode` (`game_mode_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  CONSTRAINT `fk_map_game_mode` FOREIGN KEY (`game_mode_id`) REFERENCES `game_mode` (`game_mode_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -239,24 +336,54 @@ LOCK TABLES `map` WRITE;
 /*!40000 ALTER TABLE `map` DISABLE KEYS */;
 /*!40000 ALTER TABLE `map` ENABLE KEYS */;
 UNLOCK TABLES;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `map_AFTER_DELETE` AFTER DELETE ON `map` FOR EACH ROW BEGIN
-	DELETE FROM hero_map_pick WHERE map_id = OLD.map_id;
-    DELETE FROM hero_map_win WHERE map_id = OLD.map_id;
-END */;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
+
+--
+-- Table structure for table `rank`
+--
+
+DROP TABLE IF EXISTS `rank`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `rank` (
+  `rank_id` int NOT NULL AUTO_INCREMENT,
+  `rank_name` varchar(45) NOT NULL,
+  `date_of_the_data` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`rank_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `rank`
+--
+
+LOCK TABLES `rank` WRITE;
+/*!40000 ALTER TABLE `rank` DISABLE KEYS */;
+/*!40000 ALTER TABLE `rank` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `role`
+--
+
+DROP TABLE IF EXISTS `role`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `role` (
+  `role_id` int NOT NULL AUTO_INCREMENT,
+  `role` varchar(40) NOT NULL,
+  `date_of_the_data` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`role_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `role`
+--
+
+LOCK TABLES `role` WRITE;
+/*!40000 ALTER TABLE `role` DISABLE KEYS */;
+/*!40000 ALTER TABLE `role` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Dumping events for database 'projeto_ads2'
@@ -275,4 +402,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-09-02 16:35:15
+-- Dump completed on 2025-09-29 14:39:28

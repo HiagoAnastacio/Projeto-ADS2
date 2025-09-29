@@ -15,10 +15,12 @@ from typing import Optional # Razão de Existir: Tipagem para campos que não s�
 class HeroBase(BaseModel):
     # Define o Schema base para a tabela 'hero'.
     hero_name: str = Field(..., examples=["Reinhardt"], description="Nome do herói (obrigatório).") # Variável (Escopo de Definição): Tipo str, obrigatório (Field(...)), corresponde à coluna 'hero_name'.
+    role_id: int = Field(..., examples=[1], description="ID da role do herói (Chave Estrangeira para 'role'.")
     hero_icon_img_link: Optional[HttpUrl] = Field(None, examples=["https://overwatch.com/hero/reinhardt.png"], description="Link opcional para o ícone do herói.") # Variável (Escopo de Definição): Tipo HttpUrl, opcional (Optional). Razão: O Pydantic valida se o valor é uma URL válida.
     
 class MapBase(BaseModel):
     # Define o Schema base para a tabela 'map'.
+    game_mode_id: int = Field(..., examples=[1], description="ID do modo de jogo do mapa (Chave Estrangeira para 'game_mode'.")
     map_name: str = Field(..., examples=["King's Row"], description="Nome do mapa.") # Variável (Escopo de Definição): Tipo str, corresponde à coluna 'map_name'.
 
 class RoleBase(BaseModel):
@@ -31,7 +33,7 @@ class RankBase(BaseModel):
 
 class GameModeBase(BaseModel):
     # Define o Schema base para a tabela 'game_mode'.
-    game_mode_name: str = Field(..., examples=["Competitive"], description="Nome do modo de jogo.") # Variável (Escopo de Definição): Tipo str, corresponde à coluna 'game_mode_name'.
+    game_mode_name: str = Field(..., examples=["Hybrid"], description="Nome do modo de jogo.") # Variável (Escopo de Definição): Tipo str, corresponde à coluna 'game_mode_name'.
 
 # -----------------------------------------------------\
 # 2. Modelos de Estatísticas (Tabelas de Fatos/Relacionamentos)
@@ -40,7 +42,7 @@ class GameModeBase(BaseModel):
 class HeroWinData(BaseModel):
     # Define o Schema para a tabela 'hero_win' (Taxa de Vitória por Herói).
     hero_id: int = Field(..., examples=[1], description="ID do herói (Chave Estrangeira para 'hero').") # Variável (Escopo de Definição): Tipo int, representa a FK para a tabela 'hero'.
-    win_rate: float = Field(..., examples=[50.5], description="Taxa de vitória (float).") # Variável (Escopo de Definição): Tipo float.
+    win_rate: float = Field(..., examples=[50.55], description="Taxa de vitória (float).") # Variável (Escopo de Definição): Tipo float.
 
 class HeroPickData(BaseModel):
     # Define o Schema para a tabela 'hero_pick' (Taxa de Escolha por Herói).

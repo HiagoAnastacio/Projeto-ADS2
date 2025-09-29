@@ -1,29 +1,31 @@
 # FLUXO E A LÓGICA:
-# 1. Inicializa o objeto de conexão 'db' (Escopo Global/Módulo).
-# 2. A função `execute` recebe o `sql` e `params` da rota (Escopo de Requisição).
-# 3. `execute` encapsula o fluxo de conexão: `db.connect()`, `db.execute_comand()`, `db.disconnect()`.
-# 4. Trata erros do DB (propagados de `db.py`), transformando-os em `HTTPException 500`.
-# A razão de existir: Camada DAO (Data Access Object) centralizada. Garante que todas as interações com o DB sigam o mesmo fluxo de conexão e tratamento de erros.
+# 1. Inicializa o objeto de conexão com o banco de dados (Database).
+# 2. A função 'execute' encapsula a execução SQL.
+# 3. 'execute' realiza a conexão, chama o método do DB, e desconecta.
+# 4. Trata erros do DB, transformando-os em HTTPException 500 DETALHADO.
 
-from fastapi import HTTPException # Razão: Para levantar erros HTTP para a rota em caso de falha do DB (500 Internal Server Error).
-from model.db import Database # Razão: Classe que armazena credenciais e gerencia a conexão MySQL.
+from fastapi import HTTPException 
+from model.db import Database 
 
-# Variável 'db' (Escopo Global/Módulo): Objeto de conexão criado UMA VEZ no startup da aplicação.
-# Armazena as credenciais lidas do .env.
+# Inicializa o objeto de banco de dados globalmente
 db = Database()
 
-def execute(sql: str, params: tuple = None): # Variáveis 'sql' e 'params' (Escopo de Requisição): Query e valores enviados da rota.
-    """Executa um comando SQL. Conecta, executa, desconecta, e gerencia erros."""
+def execute(sql: str, params: tuple = None): 
+    """
+    Executa um comando SQL usando a conexão do banco (Database).
+    """
     try:
-        # 1. Gerenciamento da Conexão (Escopo de Requisição)
-        db.connect() # Abre a conexão com o banco de dados.
-        # Variável 'result' (Escopo de Requisição): Dados retornados ou lastrowid/rowcount.
-        result = db.execute_comand(sql, params) # Executa o SQL (db.py lida com o COMMIT).
-        db.disconnect() # Fecha a conexão e o cursor (CRÍTICO para não estourar o limite de conexões do DB).
+        db.connect() # Tentará a conexão, e levantará o erro de conexão se falhar (graças à correção em db.py).
+        result = db.execute_comand(sql, params) 
+        db.disconnect() 
         return result 
     except Exception as e:
-        # Garante que a conexão seja sempre fechada, mesmo em caso de erro.
-        # Chamada defensiva caso o erro ocorra antes do db.disconnect().
+        # Garante que a conexão seja sempre fechada, mesmo em caso de erro
         db.disconnect() 
-        # Erro 500 (Internal Server Error) em caso de falha de conexão, deadlock, ou erro de sintaxe SQL.
-        raise HTTPException(status_code=500, detail=f"Erro de Banco de Dados: {e}")
+        
+        # --- BLOCO CRÍTICO PARA DEBUG: REVELA O ERRO ---
+        detail_message = f"Erro no banco de dados: {type(e).__name__}: {e}"
+        print(f"DEBUG SQL ERRO 500: {detail_message}") # Imprime o erro no seu console/terminal
+        
+        # Lança erro HTTP 500 para o FastAPI com a mensagem detalhada do MySQL
+        raise HTTPException(status_code=500, detail=detail_message)
