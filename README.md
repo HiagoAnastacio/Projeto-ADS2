@@ -124,7 +124,8 @@ Para iniciar a API:
 
 Bash
 
-# Com o venv ativo
+- ARRUMA O README ↓
+## Com o venv ativo
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 O servidor estará rodando em http://127.0.0.1:8000.
 
