@@ -117,3 +117,117 @@ Acesse a documentação interativa (Swagger UI) para testes em: http://127.0.0.1
 ##### Opcional
 - Inicialição no RESDIS na porta: 6379
 - ###### REDIS_URL="redis://localhost:6379" 
+
+
+🏃 COMO RODAR A APLICAÇÃO
+Para iniciar a API:
+
+Bash
+
+# Com o venv ativo
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+O servidor estará rodando em http://127.0.0.1:8000.
+
+A documentação interativa (Swagger UI) para testes está em: http://127.0.0.1:8000/docs.
+
+## 📝 EXEMPLOS DE USO DA API
+A API segue um padrão CRUD genérico para as tabelas básicas (hero, map, role, rank, etc.) listadas na Whitelist. Usaremos a tabela hero como exemplo.
+
+URL Base: http://127.0.0.1:8000
+
+1. Consulta Genérica (GET)
+Rota para buscar todos os registros de uma tabela autorizada.
+
+Verbo	Rota	Descrição
+GET	/get/{table_name}	Retorna todos os itens da tabela.
+
+Exportar para as Planilhas
+Exemplo: Buscar todos os Heróis
+
+Bash
+
+curl -X GET "http://127.0.0.1:8000/get/hero"
+Resposta de Sucesso (Status 200 OK):
+
+JSON
+
+[
+  {
+    "hero_id": 1,
+    "hero_name": "Tracer",
+    "hero_role": "Damage"
+  },
+  {
+    "hero_id": 2,
+    "hero_name": "Genji",
+    "hero_role": "Damage"
+  }
+]
+2. Inserção de Dados (POST)
+Rota para inserir um novo item em uma tabela. O corpo da requisição DEVE seguir o modelo Pydantic da tabela correspondente.
+
+Verbo	Rota	Descrição
+POST	/insert/{table_name}	Insere um novo registro na tabela.
+
+Exportar para as Planilhas
+Exemplo: Inserir um novo Herói (Body JSON)
+
+Bash
+
+curl -X POST "http://127.0.0.1:8000/insert/hero" -H "Content-Type: application/json" -d '
+{
+  "hero_name": "Mauga",
+  "hero_role": "Tank",
+  "hero_icon_img_link": "link_para_imagem.png"
+}'
+Resposta de Sucesso (Status 200 OK):
+
+JSON
+
+{
+  "message": "Dados inseridos com sucesso na tabela 'hero'.",
+  "new_id": 3
+}
+3. Atualização de Dados (PUT)
+Rota para atualizar um registro existente. O item_id deve estar na URL.
+
+Verbo	Rota	Descrição
+PUT	/update/{table_name}/{item_id}	Atualiza o registro com o ID fornecido.
+
+Exportar para as Planilhas
+Exemplo: Alterar o Role do Herói com ID 1 (Tracer)
+
+Bash
+
+curl -X PUT "http://127.0.0.1:8000/update/hero/1" -H "Content-Type: application/json" -d '
+{
+  "hero_role": "DPS" 
+}'
+Resposta de Sucesso (Status 200 OK):
+
+JSON
+
+{
+  "message": "Item com ID 1 atualizado com sucesso na tabela 'hero'.",
+  "rows_affected": 1
+}
+4. Exclusão de Dados (DELETE)
+Rota para excluir um registro existente.
+
+Verbo	Rota	Descrição
+DELETE	/delete/{table_name}/{item_id}	Exclui o registro com o ID fornecido.
+
+Exportar para as Planilhas
+Exemplo: Excluir o Herói com ID 3 (Mauga)
+
+Bash
+
+curl -X DELETE "http://127.0.0.1:8000/delete/hero/3"
+Resposta de Sucesso (Status 200 OK):
+
+JSON
+
+{
+  "message": "Item com ID 3 excluído com sucesso da tabela 'hero'.",
+  "rows_affected": 1
+}
