@@ -7,7 +7,7 @@
 
 from fastapi import APIRouter, HTTPException, Path, Depends
 from utils.function_execute import execute
-from fastapi_limiter.depends import RateLimiter
+# from fastapi_limiter.depends import RateLimiter
 
 router = APIRouter()
 

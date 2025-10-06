@@ -7,7 +7,7 @@
 
 from fastapi import APIRouter, HTTPException, Path, Depends
 from utils.function_execute import execute # Importa a função DAO para acesso ao DB.
-from fastapi_limiter.depends import RateLimiter # Importa o limitador de taxa.
+# from fastapi_limiter.depends import RateLimiter # Importa o limitador de taxa.
 
 # Variável 'router' (Escopo Global/Módulo).
 router = APIRouter()
@@ -20,7 +20,7 @@ TABLES_WHITELIST = ["hero", "map", "role", "rank", "game_mode", "hero_win", "her
 # Rota para consulta genérica: /get/{table_name}
 @router.get("/get/{table_name}", tags=["Generic Data Management"],
             #dependencies=[Depends(RateLimiter(times=20, seconds=60))]
-) # Rate Limiter ATIVADO (Essencial para GETs).
+) # Rate Limiter DESATIVADO (Essencial para GETs).
 async def get_tabela(
     table_name: str = Path(..., description="Nome da tabela para consulta")
 ):

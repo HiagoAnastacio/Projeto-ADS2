@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, Path, Depends, Body
 from typing import Dict, Any
 from utils.function_execute import execute # Importa a função DAO para acesso ao DB.
 from utils.dependencies import validate_body # Importa a dependência de validação (CRÍTICA).
-from fastapi_limiter.depends import RateLimiter # Importa o limitador de taxa (Camada de Segurança).
+# from fastapi_limiter.depends import RateLimiter # Importa o limitador de taxa (Camada de Segurança).
 import logging
 
 # Variável 'router' (Escopo Global/Módulo).

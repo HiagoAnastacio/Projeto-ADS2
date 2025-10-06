@@ -6,8 +6,8 @@
 from fastapi import FastAPI # Razão: Necessário para tipagem e para aplicar o Middleware.
 from starlette.middleware.cors import CORSMiddleware # Razão: Classe que implementa o CORS.
 from contextlib import asynccontextmanager # Razão: Essencial para gerenciar o ciclo de vida (startup/shutdown).
-import redis.asyncio as redis # Razão: Driver assíncrono para o Redis (banco de dados em memória para o Rate Limiter).
-from fastapi_limiter import FastAPILimiter # Razão: Biblioteca que usa Redis para limitar requisições.
+# import redis.asyncio as redis # Razão: Driver assíncrono para o Redis (banco de dados em memória para o Rate Limiter).
+# from fastapi_limiter import FastAPILimiter # Razão: Biblioteca que usa Redis para limitar requisições.
 from typing import AsyncGenerator # Razão: Tipagem para a função lifespan.
 
 # -----------------------------------------------------\
