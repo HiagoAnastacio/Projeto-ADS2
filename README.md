@@ -3,7 +3,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/HiagoAnastacio/Projeto-ADS2/tree/main?tab=readme-ov-file">
-    <img src="https://www.citypng.com/public/uploads/preview/black-round-overwatch-logo-symbol-701751694790663vhqifuyscu.png" alt="Logo" width="160">
+    <img src="https://static.wikia.nocookie.net/overwatch_gamepedia/images/2/28/PI_Overwatch_Esports.png/revision/latest/scale-to-width-down/250?cb=20240228082830" alt="Logo" width="160">
   </a>
 
 <h2 align="center">Overwatch 2 - Stats API & ETL Pipeline</h3>
