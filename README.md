@@ -2,22 +2,19 @@
 
 <br />
 <div align="center">
-  <a href="https://github.com/SEU-USUARIO/PROJETO-ADS2">
-    <img src="https://logodownload.org/wp-content/uploads/2020/03/overwatch-2-logo-4.png" alt="Logo" width="160">
+  <a href="https://github.com/HiagoAnastacio/Projeto-ADS2/tree/main?tab=readme-ov-file">
+    <img src="https://www.citypng.com/public/uploads/preview/black-round-overwatch-logo-symbol-701751694790663vhqifuyscu.png" alt="Logo" width="160">
   </a>
 
-<h3 align="center">Overwatch 2 - Stats API & ETL Pipeline</h3>
+<h2 align="center">Overwatch 2 - Stats API & ETL Pipeline</h3>
 
   <p align="center">
     Um backend de alta performance em FastAPI para extração, gestão e análise de estatísticas de heróis de Overwatch 2.
     <br />
     <br />
-    <a href="http://127.0.0.1:8000/docs"><strong>🚀 Explorar a Documentação da API »</strong></a>
-    <br />
-    <br />
-    <a href="https://github.com/SEU-USUARIO/PROJETO-ADS2/issues/new?labels=bug&template=bug-report---.md">Reportar Bug</a>
+    <a href="https://github.com/HiagoAnastacio/Projeto-ADS2/issues">Reportar Bug</a>
     ·
-    <a href="https://github.com/SEU-USUARIO/PROJETO-ADS2/issues/new?labels=enhancement&template=feature-request---.md">Sugerir Funcionalidade</a>
+    <a href="https://github.com/HiagoAnastacio/Projeto-ADS2/issues/new?labels=enhancement&template=feature-request---.md">Sugerir Funcionalidade</a>
   </p>
 </div>
 
