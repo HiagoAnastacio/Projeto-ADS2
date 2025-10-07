@@ -3,7 +3,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/HiagoAnastacio/Projeto-ADS2/tree/main?tab=readme-ov-file">
-    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRntYc8pMrCtOCO8EJs8WowYfEam0kVFag_97t0ZzihGGMO8nLhZ00cxEQDkoBuk1e2baM&usqp=CAU" alt="Logo" width="160">
+    <img src="images/download-removebg-preview.png" alt="Logo" width="160">
   </a>
 
 <h2 align="center">Overwatch 2 - Stats API & ETL Pipeline</h3>
