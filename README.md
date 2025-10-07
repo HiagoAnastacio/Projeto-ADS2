@@ -2,11 +2,8 @@
 
 <br />
 <div align="center">
-  <a href="https://github.com/HiagoAnastacio/Projeto-ADS2/tree/main?tab=readme-ov-file">
-    <img src="images/download-removebg-preview.png" alt="Logo" width="160">
-  </a>
 
-<h2 align="center">Overwatch 2 - Stats API & ETL Pipeline</h3>
+<h1 align="center">Overwatch 2 - Stats API & ETL Pipeline</h3>
 
   <p align="center">
     Um backend de alta performance em FastAPI para extração, gestão e análise de estatísticas de heróis de Overwatch 2.
