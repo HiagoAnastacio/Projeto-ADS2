@@ -1,3 +1,25 @@
+
+# =======================================================================================
+# SCRIPT ORQUESTRADOR - POPULAÇÃO DE TABELAS DE FATO (NÍVEL 3)
+# =======================================================================================
+# FLUXO E A LÓGICA:
+# 1. Configura o path e o logger.
+# 2. Define e parseia argumentos de linha de comando (`--limit`, `--verbose`) para flexibilidade.
+# 3. Executa a Fase de Preparação: Chama `load_all_dimensions_from_db` para carregar
+#    `hero`, `rank` e `map` em dicionários na memória, otimizando a performance.
+# 4. Executa a Fase de Orquestração: Entra em um loop aninhado, iterando sobre cada
+#    rank e cada mapa carregado da memória.
+# 5. Dentro do loop, constrói a URL da API dinamicamente para a combinação específica.
+# 6. Executa a Fase de Execução ETL:
+#    a. Chama o helper `fetch_api_data`.
+#    b. Chama o helper `transform_stats_data`.
+#    c. Chama o helper `load_stats_to_db`, passando os IDs corretos obtidos dos dicionários em memória.
+#
+# RAZÃO DE EXISTIR: Ser o "coletor" principal da aplicação. Sua única responsabilidade
+# é orquestrar a busca massiva de dados estatísticos, delegando a implementação
+# para os helpers e garantindo que todas as combinações de dados sejam coletadas.
+# =======================================================================================
+
 import sys
 import logging
 import argparse

@@ -1,47 +1,74 @@
-annotated-types==0.7.0
-anyio==4.11.0
-APScheduler==3.11.0
-certifi==2025.8.3
-charset-normalizer==3.4.3
-click==8.3.0
-colorama==0.4.6
-dnspython==2.8.0
-email-validator==2.3.0
-fastapi==0.117.1
-fastapi-cli==0.0.13
+# =======================================================================================
+# ARQUIVO DE DEPENDÊNCIAS DO PROJETO (BACKEND)
+# =======================================================================================
+# FLUXO E A LÓGICA:
+# 1. Este arquivo lista todas as bibliotecas Python externas que o projeto backend necessita.
+# 2. O comando `pip install -r requirements.txt` lê este arquivo e instala cada
+#    biblioteca listada, com sua versão exata.
+#
+# RAZÃO DE EXISTIR: Garantir um ambiente de desenvolvimento reproduzível. Qualquer
+# desenvolvedor, em qualquer máquina, pode recriar o ambiente exato do projeto
+# simplesmente instalando as dependências listadas aqui.
+# =======================================================================================
+
+# -- Frameworks e Servidor --
+fastapi==0.117.1          # O framework principal da nossa API.
+uvicorn==0.37.0          # O servidor ASGI que executa a aplicação FastAPI.
+
+# -- Validação e Tipagem de Dados --
+pydantic==2.11.9         # Essencial para a validação de dados do FastAPI e schemas.
+pydantic_core==2.33.2    # O núcleo de performance do Pydantic.
+email-validator==2.3.0   # Dependência do Pydantic para validar e-mails.
+typing_extensions==4.15.0 # Extensões de tipagem do Python.
+
+# -- Banco de Dados --
+mysql-connector-python==9.4.0 # Driver oficial para conectar a aplicação Python ao MySQL.
+
+# -- Pipeline de Dados e Coleta --
+requests==2.32.5         # Para fazer as requisições HTTP para a API da Blizzard.
+APScheduler==3.11.0      # Para agendar a execução periódica dos scripts de população.
+
+# -- Utilitários e Configuração --
+python-dotenv==1.1.1     # Para carregar variáveis de ambiente (credenciais) do arquivo .env.
+Jinja2==3.1.6            # Motor de templates, usado internamente pelo FastAPI para a documentação.
+PyYAML==6.0.3            # Para ler e escrever arquivos YAML (usado por dependências do FastAPI).
+
+# -- Outras dependências (instaladas por frameworks ou para funcionalidades específicas) --
+annotated-types==0.7.0   # Dependência do Pydantic.
+anyio==4.11.0            # Biblioteca de concorrência assíncrona, usada pelo FastAPI/Starlette.
+certifi==2025.8.3        # Certificados SSL, dependência do `requests`.
+charset-normalizer==3.4.3 # Dependência do `requests`.
+click==8.3.0             # Para criar interfaces de linha de comando (usado pelo FastAPI-CLI).
+colorama==0.4.6          # Para colorir a saída do terminal.
+dnspython==2.8.0         # Dependência do `email-validator`.
+fastapi-cli==0.0.13      # Ferramenta de linha de comando para FastAPI.
+h11==0.16.0              # Implementação do protocolo HTTP/1.1.
+httpcore==1.0.9          # Núcleo de requisições HTTP, usado pelo `httpx`.
+httpx==0.28.1            # Cliente HTTP assíncrono (instalado, mas usamos `requests` nos scripts).
+idna==3.10               # Dependência do `requests`.
+markdown-it-py==4.0.0    # Para renderizar Markdown (usado por dependências do FastAPI).
+MarkupSafe==3.0.2        # Dependência do Jinja2.
+mdurl==0.1.2             # Dependência do `markdown-it-py`.
+python-multipart==0.0.20 # Para lidar com upload de arquivos e formulários.
+rich==14.1.0             # Para formatação rica no terminal (usado pelo Typer/FastAPI-CLI).
+shellingham==1.5.4       # Dependência do `click`.
+sniffio==1.3.1           # Dependência do `anyio`.
+starlette==0.48.0        # O toolkit ASGI sobre o qual o FastAPI é construído.
+typer==0.19.2            # Para criar CLIs, base do `fastapi-cli`.
+tzdata==2025.2           # Dependência do `APScheduler` para fusos horários.
+tzlocal==5.3.1           # Dependência do `APScheduler`.
+urllib3==2.5.0           # Dependência do `requests`.
+watchfiles==1.1.0        # Usado pelo Uvicorn para o modo `--reload`.
+websockets==15.0.1       # Para suporte a WebSockets no Uvicorn.
+
+# Os pacotes abaixo parecem ter sido instalados para outros propósitos ou testes
+# e podem não ser estritamente necessários para a aplicação principal.
 fastapi-cloud-cli==0.2.1
 fastapi-limiter==0.1.6
-h11==0.16.0
-httpcore==1.0.9
 httptools==0.6.4
-httpx==0.28.1
-idna==3.10
-Jinja2==3.1.6
-markdown-it-py==4.0.0
-MarkupSafe==3.0.2
-mdurl==0.1.2
-mysql-connector-python==9.4.0
-pydantic==2.11.9
-pydantic_core==2.33.2
 Pygments==2.19.2
-python-dotenv==1.1.1
-python-multipart==0.0.20
-PyYAML==6.0.3
 redis==6.4.0
-requests==2.32.5
-rich==14.1.0
 rich-toolkit==0.15.1
 rignore==0.6.4
 sentry-sdk==2.39.0
-shellingham==1.5.4
-sniffio==1.3.1
-starlette==0.48.0
-typer==0.19.2
 typing-inspection==0.4.1
-typing_extensions==4.15.0
-tzdata==2025.2
-tzlocal==5.3.1
-urllib3==2.5.0
-uvicorn==0.37.0
-watchfiles==1.1.0
-websockets==15.0.1

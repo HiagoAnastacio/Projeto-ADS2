@@ -1,49 +1,60 @@
+# =======================================================================================
+# MÓDULO DE ROTA - GET (LEITURA)
+# =======================================================================================
 # FLUXO E A LÓGICA:
-# 1. Recebe `table_name` da URL (Escopo de Requisição).
-# 2. Valida `table_name` contra a `TABLES_WHITELIST` (Segurança CRÍTICA).
-# 3. Constrói e executa a query `SELECT * FROM {table_name}`.
-# 4. Retorna os resultados do DB como JSON.
-# A razão de existir: Ponto de entrada para a operação de leitura (GET) de forma GENÉRICA e protegida.
+# 1. Define um endpoint genérico `GET /api/get/{table_name}`.
+# 2. Recebe o nome da tabela (`table_name`) a partir do parâmetro da URL.
+# 3. Realiza uma verificação de segurança CRÍTICA, garantindo que o `table_name`
+#    esteja em uma `WHITELIST` de tabelas permitidas. Isso previne que um usuário
+#    tente acessar tabelas sensíveis ou internas.
+# 4. Constrói a query SQL `SELECT * FROM ...` dinamicamente.
+# 5. Chama a função `execute` da camada DAO para buscar os dados no banco.
+# 6. Retorna os resultados como uma resposta JSON ou um erro HTTP 404 se nada for encontrado.
+#
+# RAZÃO DE EXISTIR: Fornecer um ponto de entrada único e seguro para todas as operações
+# de leitura de dados completos de uma tabela.
+# =======================================================================================
 
-from fastapi import APIRouter, HTTPException, Path, Depends
-from utils.function_execute import execute # Importa a função DAO para acesso ao DB.
-# from fastapi_limiter.depends import RateLimiter # Importa o limitador de taxa.
+from fastapi import APIRouter, HTTPException, Path
+from utils.function_execute import execute
 
-# Variável 'router' (Escopo Global/Módulo).
+# Variável 'router' (Escopo Global/Módulo): Instância do roteador para este módulo.
 router = APIRouter()
 
 # Variável 'TABLES_WHITELIST' (Escopo Global/Módulo): Lista de tabelas permitidas.
-# Razão: SEGURANÇA. Impede que o usuário tente acessar tabelas não expostas na API.
-TABLES_WHITELIST = ["hero", "map", "role", "rank", "game_mode", "hero_win", "hero_pick",
-                    "hero_map_win", "hero_map_pick", "hero_rank_win", "hero_rank_pick",]
+# Razão: Segurança. Impede a exposição acidental de tabelas que não deveriam ser públicas.
+TABLES_WHITELIST = ["hero", "map", "role", "skill_rank", "game_mode", "patch_note",
+                    "hero_rank_map_win", "hero_rank_map_pick"] # Adicione outras tabelas de fato aqui
 
-# Rota para consulta genérica: /get/{table_name}
-@router.get("/get/{table_name}", tags=["Generic Data Management"],
-            #dependencies=[Depends(RateLimiter(times=20, seconds=60))]
-) # Rate Limiter DESATIVADO (Essencial para GETs).
+@router.get("/get/{table_name}", tags=["Generic Data Management"])
 async def get_tabela(
+    # Variável 'table_name' (Escopo de Requisição): Capturada da URL.
     table_name: str = Path(..., description="Nome da tabela para consulta")
 ):
-    """Consulta genérica e segura para tabelas autorizadas, protegida por Rate Limiting."""
+    """Consulta genérica e segura para tabelas autorizadas."""
     
     # 1. Verificação de Segurança (Whitelist)
     if table_name not in TABLES_WHITELIST:
-        # Erro 400 se a tabela não estiver na lista branca.
+        # Se a tabela não for permitida, levanta um erro 400 (Bad Request).
         raise HTTPException(status_code=400, detail=f"A tabela '{table_name}' não é válida para esta consulta.")
     
     try:
-        # CORREÇÃO: Adiciona aspas graves (`) ao redor do nome da tabela.
+        # Constrói a query SQL usando crases para proteger contra palavras reservadas.
         sql = f"SELECT * FROM `{table_name}`"
         
-        result = execute(sql=sql) # Envia para a camada DAO.
+        # Chama a camada DAO para executar a query.
+        result = execute(sql=sql)
         
+        # Verifica se a consulta retornou algum resultado.
         if result is None or len(result) == 0:
-            # Erro 404 se o DB não retornar dados (ex: tabela vazia).
+            # Se não, levanta um erro 404 (Not Found).
             raise HTTPException(status_code=404, detail=f"Nenhum dado encontrado para a tabela '{table_name}'.")
 
+        # Retorna os dados para o cliente.
         return result
     except HTTPException as e:
+        # Re-levanta exceções HTTP já tratadas (como o 500 do `execute`).
         raise e
-    except Exception:
-        # Este catch será raramente atingido, pois `execute` deve levantar HTTPException.
-        raise HTTPException(status_code=500, detail="Erro interno durante a consulta ao banco.")
+    except Exception as e:
+        # Captura qualquer outro erro inesperado.
+        raise HTTPException(status_code=500, detail=f"Erro interno durante a consulta: {e}")

@@ -1,43 +1,58 @@
+# =======================================================================================
+# MÓDULO DE SCHEMAS DE DADOS (PYDANTIC)
+# =======================================================================================
 # FLUXO E A LÓGICA:
-# 1. Este módulo define as estruturas de dados (Schemas) para toda a API.
-# 2. As classes são importadas no **model_resolver.py** (Escopo Global/Módulo).
-# 3. Uma classe específica (ex: HeroBase) é enviada para **validate_body** em tempo de requisição.
-# 4. O Pydantic usa esta classe para comparar o JSON recebido com a estrutura definida aqui, garantindo tipos e campos corretos.
-# RAZÃO DE EXISTIR: É a camada **Model/Schema Validation**. Garante a **integridade e tipagem** dos dados, protegendo a camada DAO (SQL) de dados malformados.
+# 1. Este módulo define a "forma" dos dados que a API espera receber ou enviar.
+# 2. Cada classe (ex: `HeroBase`) representa o schema de uma tabela do banco.
+# 3. O FastAPI usa essas classes para:
+#    a. Validar automaticamente o corpo (body) das requisições POST e PUT.
+#    b. Gerar a documentação do Swagger UI, mostrando o formato JSON esperado.
+#
+# RAZÃO DE EXISTIR: Atuar como a camada de **Validação e Contrato de Dados**. Garante que
+# nenhum dado malformado ou com tipos incorretos chegue à lógica de negócio ou ao
+# banco de dados, prevenindo erros e vulnerabilidades.
+# =======================================================================================
 
-from pydantic import BaseModel, HttpUrl, Field # Razão de Existir: BaseModel (base de validação), HttpUrl (validação de URLs), Field (metadados, obrigatoriedade e exemplos).
-from typing import Optional # Razão de Existir: Tipagem para campos que não são obrigatórios (permite None), útil para o UPDATE parcial.
+from pydantic import BaseModel, HttpUrl, Field
+from typing import Optional
+from datetime import date
 
-# -----------------------------------------------------\
-# 1. Modelos de Entidades Principais (Tabelas de Cadastro)
-# -----------------------------------------------------\
+# ----------------------------------------------------------------------------------
+# 1. Modelos de Entidades Principais (Tabelas de Dimensão)
+# ----------------------------------------------------------------------------------
 
 class HeroBase(BaseModel):
-    # Define o Schema base para a tabela 'hero'.
-    hero_name: str = Field(..., examples=["Reinhardt"], description="Nome do herói (obrigatório).") # Variável (Escopo de Definição): Tipo str, obrigatório (Field(...)), corresponde à coluna 'hero_name'.
-    role_id: int = Field(..., examples=[1], description="ID da role do herói (Chave Estrangeira para 'role'.")
-    hero_icon_img_link: Optional[HttpUrl] = Field(None, examples=["https://overwatch.com/hero/reinhardt.png"], description="Link opcional para o ícone do herói.") # Variável (Escopo de Definição): Tipo HttpUrl, opcional (Optional). Razão: O Pydantic valida se o valor é uma URL válida.
+    # Schema para a tabela 'hero'.
+    # Variável `hero_name` (Escopo de Definição): Campo obrigatório do tipo string.
+    hero_name: str = Field(..., examples=["Reinhardt"], description="Nome do herói.")
+    # Variável `role_id` (Escopo de Definição): Chave estrangeira para a tabela 'role'.
+    role_id: int = Field(..., examples=[1], description="ID da role do herói.")
+    # Variável `hero_icon_img_link` (Escopo de Definição): Campo opcional que valida se o valor é uma URL.
+    hero_icon_img_link: Optional[HttpUrl] = Field(None, examples=["https://..."], description="Link para o ícone do herói.")
     
 class MapBase(BaseModel):
-    # Define o Schema base para a tabela 'map'.
-    game_mode_id: int = Field(..., examples=[1], description="ID do modo de jogo do mapa (Chave Estrangeira para 'game_mode'.")
-    map_name: str = Field(..., examples=["King's Row"], description="Nome do mapa.") # Variável (Escopo de Definição): Tipo str, corresponde à coluna 'map_name'.
+    # Schema para a tabela 'map'.
+    game_mode_id: int = Field(..., examples=[1], description="ID do modo de jogo do mapa.")
+    map_name: str = Field(..., examples=["King's Row"], description="Nome do mapa.")
 
 class RoleBase(BaseModel):
-    # Define o Schema base para a tabela 'role'.
-    role_name: str = Field(..., examples=["Tank"], description="Nome da função do herói (ex: Tank, DPS, Support).") # Variável (Escopo de Definição): Tipo str, corresponde à coluna 'role_name'.
+    # Schema para a tabela 'role'. Renomeado para 'role' para consistência.
+    role: str = Field(..., examples=["Tank"], description="Nome da função (Tank, Damage, Support).")
 
 class RankBase(BaseModel):
-    # Define o Schema base para a tabela 'rank'.
-    rank_name: str = Field(..., examples=["Grandmaster"], description="Nome do nível de habilidade/rank.") # Variável (Escopo de Definição): Tipo str, corresponde à coluna 'rank_name'.
+    # Schema para a tabela 'skill_rank' (anteriormente 'rank').
+    rank_name: str = Field(..., examples=["Gold"], description="Nome do nível de habilidade.")
 
 class GameModeBase(BaseModel):
-    # Define o Schema base para a tabela 'game_mode'.
-    game_mode_name: str = Field(..., examples=["Hybrid"], description="Nome do modo de jogo.") # Variável (Escopo de Definição): Tipo str, corresponde à coluna 'game_mode_name'.
+    # Schema para a tabela 'game_mode'.
+    game_mode_name: str = Field(..., examples=["Hybrid"], description="Nome do modo de jogo.")
 
-# -----------------------------------------------------\
-# 2. Modelos de Estatísticas (Tabelas de Fatos/Relacionamentos)
-# -----------------------------------------------------\
+
+# ----------------------------------------------------------------------------------
+# 2. Modelos de Estatísticas (Tabelas de Fato)
+# ----------------------------------------------------------------------------------
+# A razão de existir para estas classes é validar os dados para as tabelas de
+# junção que armazenam as estatísticas.
 
 class HeroWinData(BaseModel):
     # Define o Schema para a tabela 'hero_win' (Taxa de Vitória por Herói).

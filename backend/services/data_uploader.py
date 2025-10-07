@@ -1,4 +1,25 @@
 # backend/services/scheduler.py
+# =======================================================================================
+# SERVIÇO DE AGENDAMENTO DE TAREFAS
+# =======================================================================================
+# FLUXO E A LÓGICA:
+# 1. Importa a biblioteca `APScheduler` e as funções `main_...()` dos scripts de população.
+# 2. Define a função `run_update_pipeline`, que atua como o "trabalho" a ser agendado,
+#    chamando os scripts de população na ordem correta.
+# 3. Usa um `asynccontextmanager` (`scheduler_lifespan`) para gerenciar o ciclo de vida
+#    do agendador.
+# 4. Dentro do `lifespan`:
+#    a. O agendador é criado e configurado para executar `run_update_pipeline` em um
+#       horário fixo (ex: todo domingo às 3 da manhã), usando uma expressão 'cron'.
+#    b. O agendador é iniciado (`scheduler.start()`).
+#    c. O controle é devolvido (`yield`) para a função principal, que entra em um loop infinito.
+#    d. Ao encerrar o script (Ctrl+C), o bloco `finally` garante que o agendador seja
+#       desligado de forma limpa (`scheduler.shutdown()`).
+#
+# RAZÃO DE EXISTIR: Automatizar a execução do pipeline de dados. É um serviço isolado e
+# de longa duração (daemon) que garante que os dados da aplicação sejam mantidos
+# atualizados sem intervenção manual.
+# =======================================================================================
 
 import asyncio
 import logging

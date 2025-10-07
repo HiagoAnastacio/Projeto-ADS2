@@ -1,52 +1,61 @@
+# =======================================================================================
+# MÓDULO DE DEPENDÊNCIAS DO FASTAPI
+# =======================================================================================
 # FLUXO E A LÓGICA:
-# 1. Recebe dados brutos (`request_body`) e o nome da tabela (`table_name`) injetados pela rota (Escopo de Requisição).
-# 2. Usa `table_name` para buscar o Schema Pydantic correspondente via `get_model_for_table`.
-# 3. O Pydantic valida o `request_body`, transformando-o em `validated_data`.
-# 4. Tipos complexos (como `HttpUrl`) são convertidos para `str` (formato aceito pelo MySQL).
-# 5. Retorna o dicionário `data_dict` limpo e seguro para a rota.
-# A razão de existir: Camada de Validação Centralizada. Garante que qualquer requisição de escrita (POST/PUT) só chegue ao banco de dados com dados íntegros e corretos (segurança de dados).
+# 1. A função `validate_body` é uma "Dependência" do FastAPI. Ela é executada
+#    automaticamente antes da lógica principal de uma rota (como `insert_data`).
+# 2. Ela recebe o `table_name` da URL e o `request_body` (JSON bruto).
+# 3. Usa o `model_resolver` para obter o schema Pydantic correto para a tabela.
+# 4. Tenta validar o JSON bruto contra o schema. Se a validação falhar, levanta um erro
+#    HTTP 422 (Unprocessable Entity) com detalhes sobre os campos incorretos.
+# 5. Se a validação for bem-sucedida, converte tipos especiais (como HttpUrl) para
+#    strings e retorna um dicionário Python limpo e seguro para a rota.
+#
+# RAZÃO DE EXISTIR: Centralizar a lógica de validação do corpo da requisição.
+# Ao usar a Injeção de Dependência do FastAPI, garantimos que esta validação
+# seja executada para todas as rotas de escrita (POST/PUT) de forma consistente e automática.
+# =======================================================================================
 
-from fastapi import HTTPException, Path # Razão: Tratamento de erros (400, 422) e definição de parâmetros de rota.
-from pydantic import BaseModel, ValidationError, HttpUrl # Razão: Classes para validação (BaseModel), tratamento de erros de validação e tipo HttpUrl.
-from typing import Dict, Any # Razão: Tipagem (dicionários e tipos genéricos).
-from model.model_resolver import get_model_for_table # Razão: Função crítica para buscar dinamicamente o modelo Pydantic da tabela.
+from fastapi import HTTPException, Path
+from pydantic import BaseModel, ValidationError, HttpUrl
+from typing import Dict, Any
+from model.model_resolver import get_model_for_table
 
 async def validate_body( 
-    # Variável 'request_body' (Escopo de Requisição): Contém o JSON bruto. Enviada da rota via Body.
+    # Variável 'request_body' (Escopo de Requisição): Contém o JSON bruto da requisição.
     request_body: Dict[str, Any], 
-    # Variável 'table_name' (Escopo de Requisição): Contém o nome da tabela. Enviada da rota via Path.
+    # Variável 'table_name' (Escopo de Requisição): Contém o nome da tabela da URL.
     table_name: str = Path(...) 
 ) -> Dict[str, Any]:
-    """Dependência que valida o corpo da requisição JSON com base no modelo Pydantic da tabela."""
+    """Dependência que valida o corpo da requisição com base no modelo Pydantic da tabela."""
     
     # 1. Resolução do Modelo
     try:
         # Variável 'model' (Escopo de Requisição): A classe Pydantic (ex: HeroBase).
-        model: BaseModel = get_model_for_table(table_name) # Obtém o modelo dinamicamente.
+        model: BaseModel = get_model_for_table(table_name)
     except ValueError as e:
-        # Retorna erro 400 se o nome da tabela for inválido ou não mapeado em model_resolver.py.
+        # Retorna erro 400 se a tabela for inválida.
         raise HTTPException(status_code=400, detail=str(e))
     
     # 2. Validação Pydantic
     try:
-        # Variável 'validated_data' (Escopo de Requisição): Objeto Pydantic validado.
+        # Tenta validar o JSON bruto. Se falhar, levanta `ValidationError`.
         validated_data = model.model_validate(request_body) 
-        # Variável 'data_dict' (Escopo de Requisição): Dicionário Python limpo (sem nulos).
-        # É enviado para o route_post/route_update.
+        # Converte o objeto Pydantic validado de volta para um dicionário.
         data_dict = validated_data.model_dump(exclude_none=True)
         
-        # 3. Conversão de Tipos Complexos (HttpUrl para str)
-        # Variável 'converted_data_dict' (Escopo de Requisição): Dicionário final pronto para o MySQL.
+        # 3. Conversão de Tipos
+        # Razão: O driver do MySQL não entende tipos Pydantic como HttpUrl.
         converted_data_dict = {}
         for key, value in data_dict.items():
             if isinstance(value, HttpUrl): 
-                converted_data_dict[key] = str(value) # HttpUrl é convertido para a string do link.
+                converted_data_dict[key] = str(value)
             else:
                 converted_data_dict[key] = value 
                 
-        return converted_data_dict # Retorna o dicionário final para a rota (data_dict no route_post/update).
+        # Retorna o dicionário final, limpo e seguro, para a rota.
+        return converted_data_dict
         
-    # 4. Tratamento de Exceções
     except ValidationError as e:
-        # Erro 422 (Unprocessable Entity) se os dados não baterem com o Schema Pydantic.
+        # Erro 422 se os dados não corresponderem ao schema.
         raise HTTPException(status_code=422, detail="Erro de validação de dados: " + str(e))

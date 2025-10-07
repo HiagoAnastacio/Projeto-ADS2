@@ -1,49 +1,55 @@
+# =======================================================================================
+# MÓDULO DE ROTA - POST (CRIAÇÃO)
+# =======================================================================================
 # FLUXO E A LÓGICA:
-# 1. Recebe 'table_name' da URL e o corpo via `request_body` (Escopo de Requisição).
-# 2. Chama `validate_body` (Dependência) para obter o dicionário seguro `data_dict`.
-# 3. Constrói a *query* SQL `INSERT` dinamicamente usando as chaves e valores de `data_dict`.
-# 4. Chama `execute` (DAO) para rodar o comando SQL.
-# A razão de existir: Ponto de entrada para a operação de escrita (POST) de forma GENÉRICA.
+# 1. Define um endpoint genérico `POST /api/insert/{table_name}`.
+# 2. Recebe o `table_name` da URL e o corpo da requisição (JSON).
+# 3. **Injeção de Dependência:** Antes de executar a lógica principal, o FastAPI chama
+#    a dependência `validate_body`, que valida o JSON contra o schema Pydantic correto.
+# 4. A rota recebe o dicionário já validado (`data_dict`) da dependência.
+# 5. Constrói a query `INSERT INTO ...` dinamicamente com base nas chaves e valores
+#    do dicionário validado.
+# 6. Chama a função `execute` da camada DAO para inserir os dados.
+# 7. Retorna uma mensagem de sucesso com o ID do novo registro.
+#
+# RAZÃO DE EXISTIR: Fornecer um ponto de entrada seguro e genérico para a criação de
+# novos registros em qualquer tabela autorizada.
+# =======================================================================================
 
 from fastapi import APIRouter, HTTPException, Path, Depends, Body 
 from typing import Dict, Any
 from utils.function_execute import execute
-import logging 
-from utils.dependencies import validate_body # Importa a dependência de validação (Camada de Lógica).
-# from fastapi_limiter.depends import RateLimiter # Importa o limitador de taxa (Camada de Segurança).
+from utils.dependencies import validate_body
 
-# Variável 'router' (Escopo Global/Módulo): Objeto APIRouter para agrupar rotas.
+# Variável 'router' (Escopo Global/Módulo).
 router = APIRouter()
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s') # Configuração básica de log.
 
-# Rota para inserir dados genéricos: /insert/{table_name}
-@router.post("/insert/{table_name}", tags=["Generic Data Management"], 
-            #dependencies=[Depends(RateLimiter(times=5, seconds=30))] # Camada de segurança (comentado/desativado).
-) 
+@router.post("/insert/{table_name}", tags=["Generic Data Management"])
 async def insert_data(
     table_name: str = Path(..., description="Nome da tabela para inserção."), 
     
-    # 1. LEITURA/DOCUMENTAÇÃO (MANTIDO para o Swagger)
-    request_body: Dict[str, Any] = Body(
-        ...,
-        description="Corpo JSON com os dados para inserir. O schema depende da tabela."
-    ),
+    # O `request_body` é usado pelo Swagger para documentação.
+    request_body: Dict[str, Any] = Body(..., description="Corpo JSON com os dados para inserir."),
     
-    # 2. VALIDAÇÃO (CRÍTICA: Injeção de Dependência que valida e limpa os dados.)
+    # Variável 'data_dict' (Escopo de Requisição): Este não é um parâmetro normal.
+    # Ele é o **resultado** da execução da dependência `validate_body`. O FastAPI injeta
+    # o dicionário validado aqui.
     data_dict: Dict[str, Any] = Depends(validate_body) 
 ):
-    """Insere um novo item em uma tabela autorizada com base em um modelo Pydantic."""
+    """Insere um novo item em uma tabela autorizada."""
     
-    # Construção Dinâmica da Query SQL (Usando apenas os dados validados de data_dict)
-    columns = ", ".join(data_dict.keys()) # Ex: "rank_name"
-    placeholders = ", ".join(["%s"] * len(data_dict)) # Ex: "%s"
-    values = tuple(data_dict.values()) # Valores que serão passados de forma segura.
+    # Constrói dinamicamente as partes da query SQL.
+    columns = ", ".join([f"`{col}`" for col in data_dict.keys()]) # Ex: `hero_name`, `role_id`
+    placeholders = ", ".join(["%s"] * len(data_dict)) # Ex: %s, %s
+    values = tuple(data_dict.values()) # Tupla com os valores a serem inseridos.
 
     try:
-        # CORREÇÃO CRÍTICA: Adiciona aspas graves (`) ao redor do nome da tabela.
+        # Monta a query final.
         sql = f"INSERT INTO `{table_name}` ({columns}) VALUES ({placeholders})"
-        new_id = execute(sql=sql, params=values) # Envia para a camada DAO.
+        # Chama a camada DAO.
+        new_id = execute(sql=sql, params=values)
         
+        # `execute` retorna o lastrowid para INSERTs.
         if not new_id:
             raise HTTPException(status_code=500, detail="Não foi possível inserir os dados.")
 
@@ -52,6 +58,4 @@ async def insert_data(
     except HTTPException as e:
         raise e
     except Exception as e:
-        # Este catch geralmente só será atingido se 'function_execute' falhar em lançar a HTTPException (ex: código antigo).
-        logging.error(f"Erro inesperado na rota POST: {e}")
-        raise HTTPException(status_code=500, detail="Erro interno do servidor.")
+        raise HTTPException(status_code=500, detail=f"Erro interno na inserção: {e}")
