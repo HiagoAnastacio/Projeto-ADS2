@@ -1,57 +1,56 @@
-# FLUXO E A LÓGICA:
-# O arquivo define funções de segurança (Rate Limiting e CORS), essenciais para proteger a API de sobrecarga (DoS) e acessos não autorizados.
-# Ambas as funções estão comentadas ou desativadas, o que significa que o Rate Limiting e o CORS não estão ativos na API atualmente.
-# A razão de existir: Concentrar a lógica de infraestrutura e segurança em um único lugar (modularidade).
+from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
+import logging # Importa o módulo de logging
 
-from fastapi import FastAPI # Razão: Necessário para tipagem e para aplicar o Middleware.
-from starlette.middleware.cors import CORSMiddleware # Razão: Classe que implementa o CORS.
-from contextlib import asynccontextmanager # Razão: Essencial para gerenciar o ciclo de vida (startup/shutdown).
-# import redis.asyncio as redis # Razão: Driver assíncrono para o Redis (banco de dados em memória para o Rate Limiter).
-# from fastapi_limiter import FastAPILimiter # Razão: Biblioteca que usa Redis para limitar requisições.
-from typing import AsyncGenerator # Razão: Tipagem para a função lifespan.
+# Cria uma instância do logger para este módulo.
+logger = logging.getLogger(__name__)
 
 # -----------------------------------------------------\
 # 1. Gerenciamento do Ciclo de Vida (Lifespan)
-#    STATUS: DESATIVADO
 # -----------------------------------------------------\
 
 @asynccontextmanager
 async def lifespan_security(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Função Lifespan DESATIVADA temporariamente. Quando ativada, inicializa serviços como o Rate Limiter/Redis."""
+    """Função Lifespan que agora loga seu status de execução."""
     
-    # O código de conexão com o Redis e FastAPILimiter.init() ficaria aqui (STARTUP).
-    # Conecta ao Redis
-    #     redis_connection = redis.from_url("redis://localhost:6379", encoding="utf-8", decode_responses=True)
-    #     await FastAPILimiter.init(redis_connection)
-    #     print("Serviço de Rate Limiting inicializado.")
+    # --- LOGGING ADICIONADO ---
+    # Informa que a função foi chamada e qual o status da funcionalidade.
+    logger.info("Estágio de Segurança: Função Lifespan executada (Rate Limiting: DESATIVADO).")
     
-    yield # Marca o ponto onde a aplicação principal é executada.
-
-    # O código de FastAPILimiter.close() ficaria aqui (SHUTDOWN).
-    # finally:
-    #     # CÓDIGO DE SHUTDOWN (TEMPORARIAMENTE COMENTADO)
-    #     await FastAPILimiter.close()
-    #     print("Conexão com o Redis encerrada.")
-
+    # O código de conexão com o Redis e FastAPILimiter.init() ficaria aqui.
+    # Se fosse ativado, o log acima seria alterado para:
+    # logger.info("Estágio de Segurança: Serviço de Rate Limiting inicializado com Redis.")
+    
+    yield
+    
+    # Código de encerramento iria aqui.
 
 # -----------------------------------------------------\
 # 2. Configuração de Middlewares (CORS)
-#    STATUS: DESATIVADO
 # -----------------------------------------------------\
 
 def configure_middlewares(app: FastAPI):
-    """Aplica todos os Middlewares de segurança e utilidade à aplicação. O CORS está temporariamente DESATIVADO."""
+    """Aplica o Middleware de CORS e loga o status da configuração."""
     
-    # O código que aplicaria o CORSMiddleware ficaria aqui.
-      # CÓDIGO DO CORS (TEMPORARIAMENTE COMENTADO)
-    # origins = ["*"] # ATENÇÃO: Em produção, substitua por domínios específicos.
-    # app.add_middleware(
-    #     CORSMiddleware,
-    #     allow_origins=origins,
-    #     allow_credentials=True,
-    #     allow_methods=["*"],
-    #     allow_headers=["*"],
-    # )
+    origins = [
+        "http://localhost",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:8080",
+    ]
 
-    # Variáveis 'origins' (Escopo de Função): Define a lista de domínios permitidos, usada apenas durante a execução desta função.
-    pass # Função vazia, pois o código de CORS está comentado.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    
+    # --- LOGGING ADICIONADO ---
+    # Informa que o CORS foi configurado e está ativo.
+    logger.info("Estágio de Segurança: Middleware de CORS ATIVADO.")
+    # Um log de nível DEBUG é útil para ver detalhes sem poluir a saída padrão.
+    logger.debug(f"Origens permitidas para o CORS: {origins}")

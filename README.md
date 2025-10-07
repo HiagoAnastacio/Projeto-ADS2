@@ -1,234 +1,242 @@
-# 📊 Overwatch 2 Stats API & ETL Pipeline
-Backend de Alta Performance para Gestão e Análise de Estatísticas de Heróis.
+<a id="readme-top"></a>
 
-O projeto consiste em uma API RESTful construída em FastAPI para armazenar, gerenciar e expor dados de performance de Overwatch 2 (Taxa de Vitória, Taxa de Escolha) por filtros como Mapa e Rank. Este backend foi projetado para ser a espinha dorsal de um futuro serviço de análise de dados.
+<br />
+<div align="center">
+  <a href="https://github.com/SEU-USUARIO/PROJETO-ADS2">
+    <img src="https://logodownload.org/wp-content/uploads/2020/03/overwatch-2-logo-4.png" alt="Logo" width="160">
+  </a>
 
-## 🚀 Sobre o Projeto
-A arquitetura foi escolhida para enfrentar dois desafios principais: garantir a performance em I/O (Input/Output) e manter a integridade dos dados.
+<h3 align="center">Overwatch 2 - Stats API & ETL Pipeline</h3>
 
-Performance: A utilização do FastAPI em Python, que opera de forma assíncrona, maximiza a velocidade de resposta da API.
+  <p align="center">
+    Um backend de alta performance em FastAPI para extração, gestão e análise de estatísticas de heróis de Overwatch 2.
+    <br />
+    <br />
+    <a href="http://127.0.0.1:8000/docs"><strong>🚀 Explorar a Documentação da API »</strong></a>
+    <br />
+    <br />
+    <a href="https://github.com/SEU-USUARIO/PROJETO-ADS2/issues/new?labels=bug&template=bug-report---.md">Reportar Bug</a>
+    ·
+    <a href="https://github.com/SEU-USUARIO/PROJETO-ADS2/issues/new?labels=enhancement&template=feature-request---.md">Sugerir Funcionalidade</a>
+  </p>
+</div>
 
-Integridade: O uso rigoroso do Pydantic força a validação dos dados de entrada antes que qualquer query SQL seja executada.
+<details>
+  <summary><strong>📝 Sumário</strong></summary>
+  <ol>
+    <li><a href="#-sobre-o-projeto">Sobre o Projeto</a></li>
+    <li><a href="#-arquitetura-e-princípios">Arquitetura e Princípios</a></li>
+    <li><a href="#-tecnologias-utilizadas">Tecnologias Utilizadas</a></li>
+    <li>
+      <a href="#-guia-de-instalação-e-uso">Guia de Instalação e Uso</a>
+      <ul>
+        <li><a href="#pré-requisitos">Pré-requisitos</a></li>
+        <li><a href="#instalação-e-configuração">Instalação e Configuração</a></li>
+      </ul>
+    </li>
+    <li><a href="#-exemplos-de-uso-da-api">Exemplos de Uso da API</a></li>
+    <li>
+      <a href="#-evolução-do-projeto">Evolução do Projeto</a>
+      <ul>
+        <li><a href="#histórico-de-modificações">Histórico de Modificações</a></li>
+        <li><a href="#ideias-em-prototipagem">Ideias em Prototipagem</a></li>
+        <li><a href="#próximos-passos-roadmap">Próximos Passos (Roadmap)</a></li>
+      </ul>
+    </li>
+    <li><a href="#-licença">Licença</a></li>
+  </ol>
+</details>
 
-Este é um projeto API-first. Não há um frontend no momento, mas a intenção de longo prazo é desenvolver uma interface (provavelmente React ou React Native) que consumirá exclusivamente os dados desta API.
+## 🎯 Sobre o Projeto
 
-## ✨ Princípios e Boas Práticas de Desenvolvimento
-Nossa arquitetura segue rigorosamente padrões estabelecidos para garantir código limpo, manutenível e escalável:
+Este projeto é uma API RESTful robusta, construída com FastAPI, que serve como a espinha dorsal para uma futura aplicação de análise de meta de Overwatch 2. Ele vai além de uma simples API, implementando um pipeline de ETL (Extração, Transformação e Carga) completo e automatizado para manter um banco de dados relacional sempre atualizado com as estatísticas mais recentes do jogo.
 
-- Princípio Aplicação no Projeto 
-Detalhes:
+A fonte de dados é uma API não documentada da própria Blizzard, descoberta através de técnicas de análise de rede, o que torna o processo de coleta de dados um desafio interessante de engenharia.
 
-Separação de Responsabilidades	Estrutura de Camadas (MVC Adaptado)	O projeto é dividido em Rotas (route_*.py), Modelos/Schemas (models.py) e Acesso a Dados (DAO) (db.py e function_execute.py), isolando a lógica de negócio, validação e persistência.
-DAO (Data Access Object)	function_execute.py	O acesso ao MySQL é encapsulado. O DAO gerencia a conexão e desconexão para cada requisição (db.connect() e db.disconnect()), garantindo o fechamento imediato do recurso e seguindo o princípio DRY (Don't Repeat Yourself) para execução SQL.
+### ✨ Principais Funcionalidades
 
-RESTful	Rotas Genéricas CRUD	
-O design da API utiliza verbos HTTP corretos (GET, POST, PUT, DELETE) em rotas dinâmicas como /insert/{table_name}, garantindo que as operações de recurso sejam previsíveis e padronizadas.
+* **API RESTful Genérica:** Endpoints CRUD (GET, POST, PUT, DELETE) dinâmicos e seguros para interagir com as tabelas do banco de dados.
+* **Pipeline de ETL Automatizado:** Um conjunto de scripts orquestrados que popula o banco de dados de forma inteligente, respeitando uma hierarquia de 3 níveis para garantir a integridade dos dados.
+* **Agendamento de Tarefas:** Um serviço isolado (`scheduler.py`) executa o pipeline de atualização periodicamente (ex: semanalmente), garantindo que as estatísticas se mantenham relevantes sem intervenção manual.
+* **Validação de Dados Robusta:** Uso intensivo do Pydantic para validar e tipar todos os dados na camada da API, protegendo o banco de dados contra informações malformadas.
+* **Documentação Automática:** A API gera sua própria documentação interativa (Swagger UI), facilitando os testes e o futuro desenvolvimento do frontend.
 
-Tratamento de Erros	HTTPException	A camada DAO (function_execute.py) implementa um bloco crítico de tratamento de erros. Ele captura exceções específicas do mysql-connector e as transforma em HTTPException(500) com a mensagem de erro detalhada, facilitando o debug para o desenvolvedor.
-Validação de Tipos	FastAPI + Pydantic	O framework utiliza modelos Pydantic para validar o payload JSON recebido. Isso garante que os dados sejam tipados corretamente antes de serem passados ao SQL, protegendo o backend.
+<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
-Exportar para as Planilhas
+## 🏛️ Arquitetura e Princípios
+
+O projeto foi desenhado para ser limpo, manutenível e escalável, seguindo princípios sólidos de engenharia de software.
+
+* **Separação de Responsabilidades (SoC):**
+    * **API (`app/`):** Focada exclusivamente em expor os dados via HTTP.
+    * **Serviços (`services/`):** Contém a lógica de negócios que roda em segundo plano, como o agendamento e a população de dados.
+    * **Modelos (`model/`):** Define a estrutura dos dados (Schemas Pydantic) e a interface de acesso ao banco (DAO).
+
+* **Don't Repeat Yourself (DRY):** A lógica de acesso ao banco (`function_execute.py`) e as funções auxiliares de ETL (`data_populate_help.py`) são centralizadas para serem reutilizadas em todo o projeto.
+
+* **Hierarquia de Dados:** O pipeline de população respeita uma estrutura de 3 níveis para garantir a integridade referencial do banco:
+    1.  **Nível 1 (Dimensões Estáticas):** Dados que raramente mudam (`role`, `rank`, `map`), populados via script SQL.
+    2.  **Nível 2 (Dimensões Dinâmicas):** Dados de referência descobertos via API (`hero`).
+    3.  **Nível 3 (Fatos):** As estatísticas que mudam constantemente e dependem dos níveis anteriores.
+
+<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
 ## 🛠️ Tecnologias Utilizadas
 
-- #### Uso Detalhado no Projeto:
+Esta é a stack de tecnologias que dá vida ao projeto:
 
-- Backend (Core), Python (FastAPI), Framework assíncrono (ASGI) que utiliza o poder do Python para I/O-bound tasks. Sua alta - - velocidade é fundamental para a performance da API.
+| Tecnologia | Função na Aplicação |
+| :--- | :--- |
+| **Python** | Linguagem principal para todo o backend e scripts. |
+| **FastAPI** | Framework web assíncrono para a construção da API RESTful de alta performance. |
+| **Pydantic** | Validação e tipagem rigorosa de dados. |
+| **MySQL** | Banco de dados relacional para persistência dos dados. |
+| **Uvicorn** | Servidor ASGI para executar a aplicação FastAPI. |
+| **APScheduler** | Biblioteca para agendar a execução automática do pipeline de dados. |
+| **Requests** | Biblioteca para realizar as chamadas HTTP para a API da Blizzard. |
+| **python-dotenv**| Gerenciamento seguro de variáveis de ambiente. |
 
-- Validação de Dados Pydantic Biblioteca CRÍTICA para a tipagem rigorosa dos dados. O FastAPI o utiliza para transformar o JSON da requisição em um objeto Python tipado, garantindo a integridade dos dados antes da inserção.
+<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
-- Conexão DB SQL (MySQL) SGBD Relacional. A lógica de UPSERT (Update or Insert) é implementada usando comandos SQL puros, aproveitando as chaves primárias compostas para eficiência.
+## ⚙️ Guia de Instalação e Uso
 
-- Driver DB	mysql-connector-python	Driver assíncrono para a comunicação eficiente entre o código Python e o servidor MySQL.
-Controle de Ambiente	python-dotenv	Utilizado para carregar as variáveis de ambiente (credenciais de DB) do arquivo .env de forma segura.
+Para colocar o projeto para rodar em sua máquina local, siga estes passos:
 
-- Segurança/Performance	fastapi-limiter (Redis)	Dependência que impõe o Rate Limiting para proteger as rotas contra abusos (ex: ataques de negação de serviço). Que ainda está em desenvolvimento...
+### Pré-requisitos
 
-- Exportar para as Planilhas
+* **Python 3.10+**
+* **MySQL Server 8.0+** (ou compatível)
+* **Git**
 
-- #### Dependências:
+### Instalação e Configuração
 
-| Dependência            | Função                                              |
-|------------------------|-----------------------------------------------------|
-| fastapi	             | Roteamento principal e interface API.               |
-| pydantic               | Definição de modelos de dados, tipagem e validação. |
-| mysql-connector-python | Comunicação com o SGBD MySQL.                       |
-| python-dotenv	         | Carregamento seguro das credenciais de ambiente.    |
-| fastapi-limiter	     | Implementação de Rate Limiting (depende de Redis).  |
-| httpx                  | Biblioteca de requisição HTTP para o módulo ETL     |
+1.  **Clone o Repositório**
+    ```sh
+    git clone [https://github.com/SEU-USUARIO/PROJETO-ADS2.git](https://github.com/SEU-USUARIO/PROJETO-ADS2.git)
+    cd PROJETO-ADS2
+    ```
 
-## ⚙️ Passo a Passo da Instalação
+2.  **Crie e Ative o Ambiente Virtual**
+    ```sh
+    # Crie o ambiente
+    python -m venv .venv
 
-1. Clonar o Repositório
-Bash
+    # Ative no Windows (PowerShell)
+    .\.venv\Scripts\activate
 
-git clone [https://github.com/SEU-USUARIO/SEU-REPOSITORIO.git]
-cd "SEU-REPOSITORIO"
+    # Ative no macOS/Linux
+    source .venv/bin/activate
+    ```
 
-2. Configurar o Ambiente Python
-Bash
+3.  **Instale as Dependências**
+    ```sh
+    pip install -r backend/requirements.txt
+    ```
 
-3. Crie e ative um ambiente virtual
-python -m venv venv
+4.  **Configure as Variáveis de Ambiente**
+    * Na pasta `backend/`, crie um arquivo chamado `.env`.
+    * Preencha-o com suas credenciais do MySQL:
+        ```env
+        DB_HOST="localhost"
+        DB_USER="seu_usuario_mysql"
+        DB_PSWD="sua_senha_mysql"
+        DB_NAME="projeto_ads2"
+        ```
 
-4. No Windows:
-venv\Scripts\activate
+5.  **Prepare o Banco de Dados**
+    * **Passo A (Estrutura):** Usando um cliente MySQL, execute o script `backend/data/Database071025.sql` para criar todas as tabelas.
+    * **Passo B (Dados Estáticos):** Em seguida, execute o script `SQL.txt` para popular as tabelas de `role`, `rank` e `game_mode`.
 
-- No macOS/Linux:
-source venv/bin/activate
+6.  **Popule o Banco com Dados da API**
+    * Rode os scripts de população na ordem correta. Este processo buscará todos os dados da Blizzard e os inserirá no seu banco.
+    ```sh
+    # 1. Popula a tabela 'hero'
+    python backend/services/scripts/populate_lvl2.py
 
-5. Instale as dependências
+    # 2. Popula as tabelas de estatísticas (pode demorar vários minutos!)
+    python backend/services/scripts/populate_lvl3.py
+    ```
 
-- pip install -r requirements.txt
+7.  **Inicie a API!** 🎉
+    * Navegue até a pasta `backend` e inicie o servidor Uvicorn:
+    ```sh
+    cd backend
+    uvicorn app.main:app --reload
+    ```
+    * Sua API estará rodando em `http://127.0.0.1:8000`.
+    * Acesse a documentação interativa em `http://127.0.0.1:8000/docs` para explorar e testar os endpoints.
 
-6. Configurar Banco de Dados e Variáveis de Ambiente
-Crie o Banco de Dados no MySQL: CREATE DATABASE ow2_stats_db;
+<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
-7. Crie o arquivo .env: Preencha na raiz do projeto com as credenciais:
+## 🖥️ Exemplos de Uso da API
 
-- Arquivo .env
+A API foi projetada para ser genérica e intuitiva. Aqui estão alguns exemplos usando `curl`:
 
-DB_HOST = "localhost"
-DB_USER = "seu_usuario_mysql"
-DB_PSWD = "sua_senha_secreta"
-DB_NAME = "ow2_stats_db"
+**URL Base:** `http://127.0.0.1:8000/api`
 
-8. Aplicação do Schema (Criação de Tabelas)
-TODO CRÍTICO: O arquivo schema.sql deve ser criado e executado no MySQL.
+#### **1. 📥 Buscar todos os heróis (GET)**
+* Busca todos os registros da tabela `hero`.
+    ```bash
+    curl -X GET "[http://127.0.0.1:8000/api/get/hero](http://127.0.0.1:8000/api/get/hero)"
+    ```
 
-- Exemplo de Tabela de Estatísticas (hero_mao_win) (MySQL):
-As chaves primárias e estrangeiras são essenciais para a devida estruturação e lógica de dados da aplicação.
+#### **2. ➕ Inserir um novo mapa (POST)**
+* Adiciona um novo registro à tabela `map`. O corpo da requisição deve corresponder ao schema.
+    ```bash
+    curl -X POST "[http://127.0.0.1:8000/api/insert/map](http://127.0.0.1:8000/api/insert/map)" -H "Content-Type: application/json" -d \
+    '{
+      "game_mode_id": 1,
+      "map_name": "Meu Novo Mapa"
+    }'
+    ```
 
-| Campo 	      | Tipo SQL 	           | Descrição                                          |
-|-----------------|------------------------|----------------------------------------------------|
-| hero_map_win_id | INT NOT NULL           | Chave primária da tabela.                          |
-| hero_id	      | INT NOT NULL           | Chave Estrangeira para a tabela de Heróis.         |
-| map_id	      | INT NOT NULL	       | Chave Estrangeira para a tabela de Mapas.          |
-| win_rate	      | DECIMAL(5, 2) NOT NULL | Taxa de vitória do herói naquele mapa (Ex: 52.15). |
+#### **3. 🔄 Atualizar um herói (PUT)**
+* Atualiza o herói com `hero_id = 1`. Apenas os campos enviados no corpo são alterados.
+    ```bash
+    curl -X PUT "[http://127.0.0.1:8000/api/update/hero/1](http://127.0.0.1:8000/api/update/hero/1)" -H "Content-Type: application/json" -d \
+    '{
+      "hero_icon_img_link": "[http://novo.link/imagem.png](http://novo.link/imagem.png)"
+    }'
+    ```
 
-9. Carga com UPSERT (Em Desenvolvimento)...
+#### **4. 🗑️ Deletar um mapa (DELETE)**
+* Remove o mapa com `map_id = 1`.
+    ```bash
+    curl -X DELETE "[http://127.0.0.1:8000/api/delete/map/1](http://127.0.0.1:8000/api/delete/map/1)"
+    ```
 
-# Com o venv ativo
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-O servidor estará rodando em http://127.0.0.1:8000.
+<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
-Acesse a documentação interativa (Swagger UI) para testes em: http://127.0.0.1:8000/docs.
+## 📈 Evolução do Projeto
 
-##### Opcional
-- Inicialição no RESDIS na porta: 6379
-- ###### REDIS_URL="redis://localhost:6379" 
+Esta seção documenta a jornada de desenvolvimento do projeto, as ideias atuais e o que vem pela frente.
 
+### 📜 Histórico de Modificações
+* **Estruturação Inicial:** Criação de uma API FastAPI com rotas CRUD genéricas e validação Pydantic.
+* **Desenvolvimento do Pipeline ETL:** Implementação do primeiro script para extração de dados da API da Blizzard.
+* **Refatoração Arquitetural (SoC):** O pipeline foi refatorado em três scripts especializados (`SQL seed`, `populate_dimensions`, `populate_facts`) e a lógica reutilizável foi movida para um módulo de helpers, melhorando a manutenibilidade.
+* **Correção de Inconsistências:** Ajuste do schema e dos scripts para lidar com palavras reservadas do SQL (ex: `rank`) e para garantir a unicidade de dados nas tabelas de dimensão.
+* **Automação:** Implementação de um serviço de agendamento (`scheduler.py`) para executar o pipeline de atualização de dados periodicamente.
 
-🏃 COMO RODAR A APLICAÇÃO
-Para iniciar a API:
+### 🧪 Ideias em Prototipagem
+* **Agregação de Dados com Views:** Em vez de popular tabelas agregadas (ex: `hero_win`), a estratégia atual é criar `Views` no banco de dados para calcular essas médias em tempo real, evitando redundância e garantindo dados sempre atualizados.
+* **Segurança (Rate Limiting):** A infraestrutura para limitar a taxa de requisições usando `fastapi-limiter` e Redis está presente no código, mas desativada.
 
-Bash
+### 🗺️ Próximos Passos (Roadmap)
+- [ ] **Desenvolvimento do Frontend:** Iniciar a construção da interface do usuário com **React**, que consumirá esta API para exibir os dados.
+- [ ] **Ativação da Segurança em Produção:** Ativar e configurar o `CORSMiddleware` para domínios de produção e habilitar o `Rate Limiting` com Redis.
+- [ ] **Melhoria no Pipeline de Fatos:** Agregar dados de outras dimensões (ex: por plataforma `console`) no `populate_facts.py`.
+- [ ] **Criação de Endpoints Analíticos:** Desenvolver rotas específicas na API para retornar dados já processados (ex: `/api/analysis/top5-winrate-by-rank/{rank_name}`).
 
-- ARRUMA O README ↓
-## Com o venv ativo
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-O servidor estará rodando em http://127.0.0.1:8000.
+<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
-A documentação interativa (Swagger UI) para testes está em: http://127.0.0.1:8000/docs.
+## 📄 Licença
 
-## 📝 EXEMPLOS DE USO DA API
-A API segue um padrão CRUD genérico para as tabelas básicas (hero, map, role, rank, etc.) listadas na Whitelist. Usaremos a tabela hero como exemplo.
+Distribuído sob a Licença MIT. Veja `LICENSE.txt` para mais informações.
 
-URL Base: http://127.0.0.1:8000
+<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
-1. Consulta Genérica (GET)
-Rota para buscar todos os registros de uma tabela autorizada.
-
-Verbo	Rota	Descrição
-GET	/get/{table_name}	Retorna todos os itens da tabela.
-
-Exportar para as Planilhas
-Exemplo: Buscar todos os Heróis
-
-Bash
-
-curl -X GET "http://127.0.0.1:8000/get/hero"
-Resposta de Sucesso (Status 200 OK):
-
-JSON
-
-[
-  {
-    "hero_id": 1,
-    "hero_name": "Tracer",
-    "hero_role": "Damage"
-  },
-  {
-    "hero_id": 2,
-    "hero_name": "Genji",
-    "hero_role": "Damage"
-  }
-]
-2. Inserção de Dados (POST)
-Rota para inserir um novo item em uma tabela. O corpo da requisição DEVE seguir o modelo Pydantic da tabela correspondente.
-
-Verbo	Rota	Descrição
-POST	/insert/{table_name}	Insere um novo registro na tabela.
-
-Exportar para as Planilhas
-Exemplo: Inserir um novo Herói (Body JSON)
-
-Bash
-
-curl -X POST "http://127.0.0.1:8000/insert/hero" -H "Content-Type: application/json" -d '
-{
-  "hero_name": "Mauga",
-  "hero_role": "Tank",
-  "hero_icon_img_link": "link_para_imagem.png"
-}'
-Resposta de Sucesso (Status 200 OK):
-
-JSON
-
-{
-  "message": "Dados inseridos com sucesso na tabela 'hero'.",
-  "new_id": 3
-}
-3. Atualização de Dados (PUT)
-Rota para atualizar um registro existente. O item_id deve estar na URL.
-
-Verbo	Rota	Descrição
-PUT	/update/{table_name}/{item_id}	Atualiza o registro com o ID fornecido.
-
-Exportar para as Planilhas
-Exemplo: Alterar o Role do Herói com ID 1 (Tracer)
-
-Bash
-
-curl -X PUT "http://127.0.0.1:8000/update/hero/1" -H "Content-Type: application/json" -d '
-{
-  "hero_role": "DPS" 
-}'
-Resposta de Sucesso (Status 200 OK):
-
-JSON
-
-{
-  "message": "Item com ID 1 atualizado com sucesso na tabela 'hero'.",
-  "rows_affected": 1
-}
-4. Exclusão de Dados (DELETE)
-Rota para excluir um registro existente.
-
-Verbo	Rota	Descrição
-DELETE	/delete/{table_name}/{item_id}	Exclui o registro com o ID fornecido.
-
-Exportar para as Planilhas
-Exemplo: Excluir o Herói com ID 3 (Mauga)
-
-Bash
-
-curl -X DELETE "http://127.0.0.1:8000/delete/hero/3"
-Resposta de Sucesso (Status 200 OK):
-
-JSON
-
-{
-  "message": "Item com ID 3 excluído com sucesso da tabela 'hero'.",
-  "rows_affected": 1
-}
+[issues-shield]: https://img.shields.io/github/issues/othneildrew/Best-README-Template.svg?style=for-the-badge
+[issues-url]: https://github.com/SEU-USUARIO/PROJETO-ADS2/issues
+[license-shield]: https://img.shields.io/github/license/othneildrew/Best-README-Template.svg?style=for-the-badge
+[license-url]: https://github.com/SEU-USUARIO/PROJETO-ADS2/blob/master/LICENSE.txt
