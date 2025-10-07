@@ -1,3 +1,53 @@
+# ==================================
+# Regras do Backend (Python)
+# ==================================
+
+# Ignora o ambiente virtual do Python dentro da pasta backend
+/backend/.venv/
+
+# Ignora o arquivo de variáveis de ambiente do backend
 /backend/.env
-.venv
-__pycache__/
+
+# Ignora os caches de bytecode do Python em qualquer pasta
+**/__pycache__/
+
+
+# ==================================
+# Regras do Frontend (JavaScript/Vite)
+# ==================================
+
+# Ignora a pasta de dependências do Node.js dentro do frontend
+/frontend/node_modules/
+
+# Ignora as pastas de build do frontend
+/frontend/dist/
+/frontend/dist-ssr/
+
+# Ignora arquivos de ambiente locais do frontend
+/frontend/*.local
+
+
+# ==================================
+# Regras Gerais (Logs, Editor de Código, etc.)
+# ==================================
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Arquivos e pastas de configuração de editores de código
+# Permite que as recomendações de extensões sejam comitadas
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
