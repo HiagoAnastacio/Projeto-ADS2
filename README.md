@@ -51,7 +51,7 @@ A fonte de dados é uma API não documentada da própria Blizzard, descoberta at
 
 * **API RESTful Genérica:** Endpoints CRUD (GET, POST, PUT, DELETE) dinâmicos e seguros para interagir com as tabelas do banco de dados.
 * **Pipeline de ETL Automatizado:** Um conjunto de scripts orquestrados que popula o banco de dados de forma inteligente, respeitando uma hierarquia de 3 níveis para garantir a integridade dos dados.
-* **Agendamento de Tarefas:** Um serviço isolado (`scheduler.py`) executa o pipeline de atualização periodicamente (ex: semanalmente), garantindo que as estatísticas se mantenham relevantes sem intervenção manual.
+* **Agendamento de Tarefas:** Um serviço isolado (`data_uploader.py`) executa o pipeline de atualização periodicamente (ex: semanalmente), garantindo que as estatísticas se mantenham relevantes sem intervenção manual.
 * **Validação de Dados Robusta:** Uso intensivo do Pydantic para validar e tipar todos os dados na camada da API, protegendo o banco de dados contra informações malformadas.
 * **Documentação Automática:** A API gera sua própria documentação interativa (Swagger UI), facilitando os testes e o futuro desenvolvimento do frontend.
 
