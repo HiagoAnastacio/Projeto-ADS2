@@ -1,14 +1,31 @@
+# =======================================================================================
+# ARQUIVO DE IGNORE DO GIT
+# =======================================================================================
+# FLUXO E A LÓGICA:
+# 1. Este arquivo instrui o Git sobre quais arquivos e pastas ele deve IGNORAR.
+# 2. As regras são aplicadas a partir da raiz do projeto, onde este arquivo está localizado.
+# 3. Ele é dividido em seções para organizar as regras por ambiente (Backend, Frontend) e gerais.
+#
+# RAZÃO DE EXISTIR: Manter o repositório limpo e seguro. Impede que arquivos
+# sensíveis (como senhas no .env), dependências (como as pastas .venv e node_modules)
+# e arquivos gerados automaticamente (como caches __pycache__) sejam enviados
+# para o GitHub.
+# =======================================================================================
+
 # ==================================
 # Regras do Backend (Python)
 # ==================================
 
-# Ignora o ambiente virtual do Python dentro da pasta backend
+# Ignora o ambiente virtual do Python localizado dentro da pasta backend.
+# Razão: Contém milhares de arquivos de bibliotecas que podem ser reinstalados com `requirements.txt`.
 /backend/.venv/
 
-# Ignora o arquivo de variáveis de ambiente do backend
+# Ignora o arquivo de variáveis de ambiente do backend.
+# Razão: SEGURANÇA CRÍTICA. Contém as credenciais do banco de dados e nunca deve ser versionado.
 /backend/.env
 
-# Ignora os caches de bytecode do Python em qualquer pasta
+# Ignora os caches de bytecode do Python em qualquer pasta do projeto.
+# Razão: São arquivos temporários gerados pelo Python para otimizar a execução.
 **/__pycache__/
 
 
@@ -16,14 +33,17 @@
 # Regras do Frontend (JavaScript/Vite)
 # ==================================
 
-# Ignora a pasta de dependências do Node.js dentro do frontend
+# Ignora a pasta de dependências do Node.js dentro do frontend.
+# Razão: Assim como o .venv, contém milhares de arquivos que podem ser reinstalados com `npm install`.
 /frontend/node_modules/
 
-# Ignora as pastas de build do frontend
+# Ignora as pastas de build do frontend (resultado da compilação para produção).
+# Razão: São arquivos gerados e otimizados. Apenas o código-fonte deve ser versionado.
 /frontend/dist/
 /frontend/dist-ssr/
 
-# Ignora arquivos de ambiente locais do frontend
+# Ignora arquivos de ambiente locais do frontend.
+# Razão: Segurança, para evitar o commit de chaves de API ou outras credenciais do frontend.
 /frontend/*.local
 
 
@@ -31,7 +51,7 @@
 # Regras Gerais (Logs, Editor de Código, etc.)
 # ==================================
 
-# Logs
+# Ignora arquivos de log gerados pela aplicação ou ferramentas.
 logs
 *.log
 npm-debug.log*
@@ -40,9 +60,11 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Arquivos e pastas de configuração de editores de código
-# Permite que as recomendações de extensões sejam comitadas
+# Ignora arquivos e pastas de configuração de editores de código (exceto recomendações).
+# Razão: Mantém o repositório agnóstico em relação ao editor de cada desenvolvedor.
 .vscode/*
+# Exceção: NÃO ignora o arquivo de recomendações de extensões, para que
+# ele possa ser compartilhado com a equipe.
 !.vscode/extensions.json
 .idea/
 .DS_Store

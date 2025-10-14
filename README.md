@@ -2,12 +2,11 @@
 
 <br />
 <div align="center">
-
-<h1 align="center">Overwatch 2 - Stats API & ETL Pipeline</h3>
+  
+<h2 align="center">Overwatch 2 - Stats API & ETL Pipeline</h2>
 
   <p align="center">
-    Um backend de alta performance em FastAPI para extração, gestão e análise de estatísticas de heróis de Overwatch 2.
-    <br />
+    Um backend de alta performance em FastAPI para extração, gestão e análise de estatísticas de heróis de Overwatch 2, com um pipeline de dados totalmente automatizado.
     <br />
     <a href="https://github.com/HiagoAnastacio/Projeto-ADS2/issues">Reportar Bug</a>
     ·
@@ -28,12 +27,11 @@
         <li><a href="#instalação-e-configuração">Instalação e Configuração</a></li>
       </ul>
     </li>
-    <li><a href="#-exemplos-de-uso-da-api">Exemplos de Uso da API</a></li>
+    <li><a href="#-fluxo-de-dados-etl">Fluxo de Dados (ETL)</a></li>
     <li>
       <a href="#-evolução-do-projeto">Evolução do Projeto</a>
       <ul>
         <li><a href="#histórico-de-modificações">Histórico de Modificações</a></li>
-        <li><a href="#ideias-em-prototipagem">Ideias em Prototipagem</a></li>
         <li><a href="#próximos-passos-roadmap">Próximos Passos (Roadmap)</a></li>
       </ul>
     </li>
@@ -43,17 +41,18 @@
 
 ## 🎯 Sobre o Projeto
 
-Este projeto é uma API RESTful robusta, construída com FastAPI, que serve como a espinha dorsal para uma futura aplicação de análise de meta de Overwatch 2. Ele vai além de uma simples API, implementando um pipeline de ETL (Extração, Transformação e Carga) completo e automatizado para manter um banco de dados relacional sempre atualizado com as estatísticas mais recentes do jogo.
+Este projeto consiste em uma API RESTful robusta, construída com FastAPI, projetada para ser a espinha dorsal de um serviço de análise de meta de Overwatch 2. A aplicação não apenas serve os dados, mas também implementa um pipeline de ETL (Extração, Transformação e Carga) completo e automatizado para manter o banco de dados atualizado com as estatísticas mais recentes do jogo.
 
-A fonte de dados é uma API não documentada da própria Blizzard, descoberta através de técnicas de análise de rede, o que torna o processo de coleta de dados um desafio interessante de engenharia.
+A fonte de dados é uma combinação de uma API não documentada da Blizzard (para estatísticas) e Web Scraping (para a lista de mapas), refletindo uma solução de engenharia adaptativa para a ausência de uma API pública completa.
 
 ### ✨ Principais Funcionalidades
 
-* **API RESTful Genérica:** Endpoints CRUD (GET, POST, PUT, DELETE) dinâmicos e seguros para interagir com as tabelas do banco de dados.
-* **Pipeline de ETL Automatizado:** Um conjunto de scripts orquestrados que popula o banco de dados de forma inteligente, respeitando uma hierarquia de 3 níveis para garantir a integridade dos dados.
-* **Agendamento de Tarefas:** Um serviço isolado (`data_uploader.py`) executa o pipeline de atualização periodicamente (ex: semanalmente), garantindo que as estatísticas se mantenham relevantes sem intervenção manual.
+* **API RESTful Genérica:** Endpoints CRUD (GET, POST, PUT, DELETE) que operam de forma dinâmica e segura sobre um conjunto de tabelas e views autorizadas.
+* **Pipeline de ETL Automatizado:** Um conjunto de scripts orquestrados que popula o banco de dados respeitando uma hierarquia de dados de 3 níveis para garantir a integridade referencial.
+* **Agendamento Integrado:** Um serviço de agendamento (`data_uploader.py`) que executa o pipeline de atualização periodicamente (ex: semanalmente). Ele é iniciado junto com a API através do `lifespan` do FastAPI, eliminando a necessidade de gerenciar processos separados.
+* **Dados Agregados com Views:** As tabelas de dados agregados (ex: `hero_win`) foram substituídas por `Views` do MySQL, que calculam as médias em tempo real. Isso evita redundância de dados e garante que as informações estejam sempre consistentes.
 * **Validação de Dados Robusta:** Uso intensivo do Pydantic para validar e tipar todos os dados na camada da API, protegendo o banco de dados contra informações malformadas.
-* **Documentação Automática:** A API gera sua própria documentação interativa (Swagger UI), facilitando os testes e o futuro desenvolvimento do frontend.
+* **Documentação Automática:** A API gera sua própria documentação interativa (Swagger UI), facilitando os testes e o desenvolvimento do frontend.
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
@@ -63,14 +62,14 @@ O projeto foi desenhado para ser limpo, manutenível e escalável, seguindo prin
 
 * **Separação de Responsabilidades (SoC):**
     * **API (`app/`):** Focada exclusivamente em expor os dados via HTTP.
-    * **Serviços (`services/`):** Contém a lógica de negócios que roda em segundo plano, como o agendamento e a população de dados.
+    * **Serviços (`services/`):** Contém a lógica de negócios que roda em segundo plano, como o agendamento e os scripts de população de dados.
     * **Modelos (`model/`):** Define a estrutura dos dados (Schemas Pydantic) e a interface de acesso ao banco (DAO).
 
-* **Don't Repeat Yourself (DRY):** A lógica de acesso ao banco (`function_execute.py`) e as funções auxiliares de ETL (`data_populate_help.py`) são centralizadas para serem reutilizadas em todo o projeto.
+* **Don't Repeat Yourself (DRY):** A lógica de acesso ao banco (`function_execute.py`) e as funções de extração (`extraction_helpers.py`) são centralizadas para serem reutilizadas em todo o projeto.
 
 * **Hierarquia de Dados:** O pipeline de população respeita uma estrutura de 3 níveis para garantir a integridade referencial do banco:
-    1.  **Nível 1 (Dimensões Estáticas):** Dados que raramente mudam (`role`, `rank`, `map`), populados via script SQL.
-    2.  **Nível 2 (Dimensões Dinâmicas):** Dados de referência descobertos via API (`hero`).
+    1.  **Nível 1 (Dimensões Estáticas):** Dados que raramente mudam (`role`, `rank`, `game_mode`), populados via script SQL `Sql_build.sql`.
+    2.  **Nível 2 (Dimensões Dinâmicas):** Dados de referência que são descobertos (`hero` via API, `map` via Web Scraping).
     3.  **Nível 3 (Fatos):** As estatísticas que mudam constantemente e dependem dos níveis anteriores.
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
@@ -82,13 +81,14 @@ Esta é a stack de tecnologias que dá vida ao projeto:
 | Tecnologia | Função na Aplicação |
 | :--- | :--- |
 | **Python** | Linguagem principal para todo o backend e scripts. |
-| **FastAPI** | Framework web assíncrono para a construção da API RESTful de alta performance. |
+| **FastAPI** | Framework web assíncrono para a construção da API RESTful. |
 | **Pydantic** | Validação e tipagem rigorosa de dados. |
 | **MySQL** | Banco de dados relacional para persistência dos dados. |
-| **Uvicorn** | Servidor ASGI para executar a aplicação FastAPI. |
+| **Uvicorn**| Servidor ASGI para executar a aplicação FastAPI. |
 | **APScheduler** | Biblioteca para agendar a execução automática do pipeline de dados. |
 | **Requests** | Biblioteca para realizar as chamadas HTTP para a API da Blizzard. |
-| **python-dotenv**| Gerenciamento seguro de variáveis de ambiente. |
+| **BeautifulSoup4** | Biblioteca para Web Scraping do HTML da página de mapas da Blizzard. |
+| **python-dotenv** | Gerenciamento seguro de variáveis de ambiente. |
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
@@ -110,9 +110,9 @@ Para colocar o projeto para rodar em sua máquina local, siga estes passos:
     cd PROJETO-ADS2
     ```
 
-2.  **Crie e Ative o Ambiente Virtual**
+2.  **Crie e Ative o Ambiente Virtual (dentro do backend)**
     ```sh
-    # Crie o ambiente
+    cd backend
     python -m venv .venv
 
     # Ative no Windows (PowerShell)
@@ -124,11 +124,11 @@ Para colocar o projeto para rodar em sua máquina local, siga estes passos:
 
 3.  **Instale as Dependências**
     ```sh
-    pip install -r backend/requirements.txt
+    pip install -r requirements.txt
     ```
 
 4.  **Configure as Variáveis de Ambiente**
-    * Na pasta `backend/`, crie um arquivo chamado `.env`.
+    * Ainda na pasta `backend/`, crie um arquivo chamado `.env`.
     * Preencha-o com suas credenciais do MySQL:
         ```env
         DB_HOST="localhost"
@@ -137,67 +137,47 @@ Para colocar o projeto para rodar em sua máquina local, siga estes passos:
         DB_NAME="projeto_ads2"
         ```
 
-5.  **Prepare o Banco de Dados**
-    * **Passo A (Estrutura):** Usando um cliente MySQL, execute o script `backend/data/Database071025.sql` para criar todas as tabelas.
-    * **Passo B (Dados Estáticos):** Em seguida, execute o script `SQL.txt` para popular as tabelas de `role`, `rank` e `game_mode`.
+5.  **Prepare o Banco de Dados (Setup Inicial)**
+    * Usando um cliente MySQL (Workbench, etc.), execute o script `backend/data/Sql_build.sql`. Isso irá criar o schema, as tabelas, os dados estáticos e as `Views`.
 
-6.  **Popule o Banco com Dados da API**
-    * Rode os scripts de população na ordem correta. Este processo buscará todos os dados da Blizzard e os inserirá no seu banco.
+6.  **Execute a Carga Inicial de Dados Dinâmicos**
+    * Rode os scripts de população de Nível 2 e 3 **uma vez**, manualmente, para a carga inicial.
     ```sh
-    # 1. Popula a tabela 'hero'
-    python backend/services/scripts/populate_lvl2.py
+    # 1. Popula a tabela 'map' via Web Scraping
+    python services/scripts/scrape_maps_lvl2.py
 
-    # 2. Popula as tabelas de estatísticas (pode demorar vários minutos!)
-    python backend/services/scripts/populate_lvl3.py
+    # 2. Popula a tabela 'hero' via API
+    python services/scripts/populate_hero_lvl2.py
+
+    # 3. Popula as tabelas de estatísticas (pode demorar vários minutos!)
+    python services/scripts/populate_lvl3.py
     ```
 
-7.  **Inicie a API!** 🎉
-    * Navegue até a pasta `backend` e inicie o servidor Uvicorn:
+7.  **Inicie a Aplicação Completa (API + Agendador)!** 🎉
+    * Com tudo populado, inicie o servidor Uvicorn. Este comando único ativa tanto a API quanto o serviço de agendamento em segundo plano.
     ```sh
-    cd backend
+    # Estando na pasta 'backend'
     uvicorn app.main:app --reload
     ```
     * Sua API estará rodando em `http://127.0.0.1:8000`.
-    * Acesse a documentação interativa em `http://127.0.0.1:8000/docs` para explorar e testar os endpoints.
+    * Acesse a documentação interativa em `http://127.0.0.1:8000/docs`.
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
-## 🖥️ Exemplos de Uso da API
+## 🌊 Fluxo de Dados (ETL)
 
-A API foi projetada para ser genérica e intuitiva. Aqui estão alguns exemplos usando `curl`:
+O coração do projeto é o pipeline automatizado de Extração, Transformação e Carga (ETL).
 
-**URL Base:** `http://127.0.0.1:8000/api`
+* **Extração (Fetch):**
+    * **Estatísticas (`hero`, `win_rate`, `pick_rate`):** Utiliza a biblioteca `requests` para chamar a API interna da Blizzard. Uma simulação de navegador é feita ao incluir um cabeçalho `User-Agent` na requisição. Os dados já são recebidos em formato JSON.
+    * **Mapas (`map`):** Utiliza `requests` e `BeautifulSoup4` para fazer Web Scraping da página de mapas da Blizzard, extraindo os nomes dos mapas e seus modos de jogo diretamente do HTML.
 
-#### **1. 📥 Buscar todos os heróis (GET)**
-* Busca todos os registros da tabela `hero`.
-    ```bash
-    curl -X GET "[http://127.0.0.1:8000/api/get/hero](http://127.0.0.1:8000/api/get/hero)"
-    ```
+* **Transformação (Transform):**
+    * Os dados brutos da API e do scraping são limpos e estruturados em dicionários Python pelos scripts de população.
+    * As chaves estrangeiras (como `role_id`, `rank_id`) são resolvidas consultando dicionários em memória que foram previamente carregados do banco de dados.
 
-#### **2. ➕ Inserir um novo mapa (POST)**
-* Adiciona um novo registro à tabela `map`. O corpo da requisição deve corresponder ao schema.
-    ```bash
-    curl -X POST "[http://127.0.0.1:8000/api/insert/map](http://127.0.0.1:8000/api/insert/map)" -H "Content-Type: application/json" -d \
-    '{
-      "game_mode_id": 1,
-      "map_name": "Meu Novo Mapa"
-    }'
-    ```
-
-#### **3. 🔄 Atualizar um herói (PUT)**
-* Atualiza o herói com `hero_id = 1`. Apenas os campos enviados no corpo são alterados.
-    ```bash
-    curl -X PUT "[http://127.0.0.1:8000/api/update/hero/1](http://127.0.0.1:8000/api/update/hero/1)" -H "Content-Type: application/json" -d \
-    '{
-      "hero_icon_img_link": "[http://novo.link/imagem.png](http://novo.link/imagem.png)"
-    }'
-    ```
-
-#### **4. 🗑️ Deletar um mapa (DELETE)**
-* Remove o mapa com `map_id = 1`.
-    ```bash
-    curl -X DELETE "[http://127.0.0.1:8000/api/delete/map/1](http://127.0.0.1:8000/api/delete/map/1)"
-    ```
+* **Carga (Load):**
+    * Os scripts constroem e executam queries SQL `INSERT ... ON DUPLICATE KEY UPDATE` para inserir os novos dados ou atualizar os existentes, garantindo que o banco de dados reflita as estatísticas mais recentes.
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
@@ -207,30 +187,21 @@ Esta seção documenta a jornada de desenvolvimento do projeto, as ideias atuais
 
 ### 📜 Histórico de Modificações
 * **Estruturação Inicial:** Criação de uma API FastAPI com rotas CRUD genéricas e validação Pydantic.
-* **Desenvolvimento do Pipeline ETL:** Implementação do primeiro script para extração de dados da API da Blizzard.
-* **Refatoração Arquitetural (SoC):** O pipeline foi refatorado em três scripts especializados (`SQL seed`, `populate_dimensions`, `populate_facts`) e a lógica reutilizável foi movida para um módulo de helpers, melhorando a manutenibilidade.
-* **Correção de Inconsistências:** Ajuste do schema e dos scripts para lidar com palavras reservadas do SQL (ex: `rank`) e para garantir a unicidade de dados nas tabelas de dimensão.
-* **Automação:** Implementação de um serviço de agendamento (`scheduler.py`) para executar o pipeline de atualização de dados periodicamente.
-
-### 🧪 Ideias em Prototipagem
-* **Agregação de Dados com Views:** Em vez de popular tabelas agregadas (ex: `hero_win`), a estratégia atual é criar `Views` no banco de dados para calcular essas médias em tempo real, evitando redundância e garantindo dados sempre atualizados.
-* **Segurança (Rate Limiting):** A infraestrutura para limitar a taxa de requisições usando `fastapi-limiter` e Redis está presente no código, mas desativada.
+* **Desenvolvimento do Pipeline ETL:** Implementação dos primeiros scripts para extração de dados da API da Blizzard e Web Scraping.
+* **Refatoração Arquitetural (SoC):** O pipeline foi refatorado em múltiplos scripts especializados (`scrape_maps_lvl2`, `populate_hero_lvl2`, `populate_lvl3`) e a lógica reutilizável de extração foi movida para um módulo de helpers (`utils/extraction_helpers`).
+* **Otimização do Banco de Dados:** As tabelas de dados agregados foram substituídas por `Views` do MySQL para evitar redundância, garantir consistência e simplificar o pipeline de carga.
+* **Automação Integrada:** O serviço de agendamento (`data_uploader.py`) foi integrado ao ciclo de vida da API principal usando `lifespan`, permitindo que ambos os serviços rodem com um único comando.
 
 ### 🗺️ Próximos Passos (Roadmap)
 - [ ] **Desenvolvimento do Frontend:** Iniciar a construção da interface do usuário com **React**, que consumirá esta API para exibir os dados.
-- [ ] **Ativação da Segurança em Produção:** Ativar e configurar o `CORSMiddleware` para domínios de produção e habilitar o `Rate Limiting` com Redis.
-- [ ] **Melhoria no Pipeline de Fatos:** Agregar dados de outras dimensões (ex: por plataforma `console`) no `populate_facts.py`.
+- [ ] **Ativação da Segurança em Produção:** Ativar e configurar o `CORSMiddleware` para domínios de produção e habilitar o `Rate Limiting`.
+- [ ] **Melhoria no Pipeline de Fatos:** Agregar dados de outras dimensões (ex: por plataforma `console`) no `populate_lvl3.py`.
 - [ ] **Criação de Endpoints Analíticos:** Desenvolver rotas específicas na API para retornar dados já processados (ex: `/api/analysis/top5-winrate-by-rank/{rank_name}`).
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
 ## 📄 Licença
 
-Distribuído sob a Licença MIT. Veja `LICENSE.txt` para mais informações.
+Distribuído sob a Licença MIT.
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
-
-[issues-shield]: https://img.shields.io/github/issues/othneildrew/Best-README-Template.svg?style=for-the-badge
-[issues-url]: https://github.com/SEU-USUARIO/PROJETO-ADS2/issues
-[license-shield]: https://img.shields.io/github/license/othneildrew/Best-README-Template.svg?style=for-the-badge
-[license-url]: https://github.com/SEU-USUARIO/PROJETO-ADS2/blob/master/LICENSE.txt

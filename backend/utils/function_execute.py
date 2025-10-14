@@ -4,54 +4,65 @@
 # FLUXO E A LÓGICA:
 # 1. Uma instância global da classe `Database` é criada para ser reutilizada.
 # 2. A função 'execute' é o único ponto de entrada para qualquer operação no banco de dados.
-# 3. Ela gerencia o ciclo de vida completo da conexão para cada chamada:
-#    a. Abre a conexão (`db.connect()`).
-#    b. Executa o comando SQL de forma segura (`db.execute_comand()`).
-#    c. Fecha a conexão (`db.disconnect()`), garantindo que os recursos sejam liberados.
-# 4. Implementa um bloco `try...except...finally` robusto para garantir que a conexão
-#    seja fechada mesmo em caso de erro.
-# 5. Captura qualquer erro vindo da camada de banco de dados (`db.py`) e o transforma
-#    em uma `HTTPException` padronizada do FastAPI com uma mensagem de erro detalhada,
-#    facilitando o debug tanto no frontend quanto no backend.
+# 3. (NOVO) Antes da execução, a função verifica se o comando é um INSERT. Se for,
+#    ela extrai o nome da tabela e loga os dados que serão inseridos.
+# 4. Ela gerencia o ciclo de vida completo da conexão: conectar, executar, desconectar.
+# 5. Captura qualquer erro do banco e o transforma em uma `HTTPException` padronizada.
 #
-# RAZÃO DE EXISTIR: Abstrair a complexidade do gerenciamento de conexões e centralizar
-# o tratamento de erros do banco de dados. Este módulo atua como um "portão" seguro
-# para o banco, garantindo que todas as interações sigam um padrão consistente e seguro.
+# RAZÃO DE EXISTIR: Abstrair a complexidade do gerenciamento de conexões, centralizar
+# o tratamento de erros e, agora, centralizar o logging de operações de escrita.
 # =======================================================================================
 
-# Importa a classe para levantar erros HTTP padronizados do FastAPI.
 from fastapi import HTTPException 
-# Importa a nossa classe personalizada de gerenciamento de banco de dados.
 from model.db import Database 
+import logging  # Importa o módulo de logging
+import re       # Importa o módulo de expressões regulares para extrair o nome da tabela
 
-# Variável 'db' (Escopo Global/Módulo): Uma única instância da classe Database é criada
-# quando o módulo é carregado. Ela será reutilizada por todas as chamadas à função `execute`.
+# --- Configuração do Logger ---
+# Pega a instância do logger configurada no main.py ou nos scripts.
+logger = logging.getLogger(__name__)
+
+# Variável 'db' (Escopo Global/Módulo): Instância única da classe Database.
 db = Database()
 
 def execute(sql: str, params: tuple = None): 
     """
-    Executa um comando SQL, gerenciando todo o ciclo de conexão e tratamento de erros.
+    Executa um comando SQL, gerenciando a conexão, o tratamento de erros e o logging de inserções.
     """
+    # --- LOGGING DE INSERÇÃO ADICIONADO ---
+    # Verifica se o comando é um INSERT para logar os dados que serão inseridos.
+    if sql.strip().lower().startswith("insert"):
+        try:
+            # Usa uma expressão regular para extrair o nome da tabela de forma segura da string SQL.
+            # Procura por "INSERT INTO `nome_da_tabela`".
+            table_name_match = re.search(r"INSERT INTO `(.*?)`", sql, re.IGNORECASE)
+            if table_name_match:
+                # `group(1)` captura o que está dentro dos parênteses na regex.
+                table_name = table_name_match.group(1)
+                # Loga a informação no formato solicitado.
+                logger.info(f"Dado a ser inserido na tabela '{table_name}': {params}")
+            else:
+                # Caso a regex falhe, loga uma mensagem genérica.
+                logger.info(f"Tentativa de inserção com dados: {params}")
+        except Exception as log_error:
+            # Garante que uma falha no logging não interrompa a operação principal.
+            logger.error(f"Erro ao tentar logar dados de inserção: {log_error}")
+
     try:
         # Passo 1: Abre a conexão com o banco de dados.
         db.connect()
         # Passo 2: Chama o método da classe Database para executar a query.
-        # `result` conterá os dados de um SELECT, o ID de um INSERT, ou as linhas afetadas.
         result = db.execute_comand(sql, params) 
-        # Retorna o resultado da operação bem-sucedida.
+        # Retorna o resultado da operação.
         return result 
     except Exception as e:
-        # Este bloco é executado se `db.connect()` ou `db.execute_comand()` levantarem um erro.
-        
-        # Cria uma mensagem de erro detalhada, incluindo o tipo do erro e a mensagem.
+        # Em caso de erro, cria uma mensagem detalhada.
         detail_message = f"Erro no banco de dados: {type(e).__name__}: {e}"
-        # Imprime o erro no console do servidor para visibilidade imediata do desenvolvedor.
+        # Imprime o erro no console para debug.
         print(f"DEBUG SQL ERRO 500: {detail_message}") 
         
-        # Levanta uma exceção HTTP 500 (Erro Interno do Servidor) que será enviada
-        # como resposta JSON ao cliente da API, informando a causa do problema.
+        # Levanta uma exceção HTTP 500 para a API.
         raise HTTPException(status_code=500, detail=detail_message)
     finally:
-        # Passo 3: Garante que a conexão seja sempre fechada, quer a operação
-        # tenha sido bem-sucedida ou tenha falhado.
+        # Passo 3: Garante que a conexão seja sempre fechada.
         db.disconnect()
