@@ -33,7 +33,6 @@ beautifulsoup4==4.14.2   # Biblioteca para fazer o Web Scraping (parsing do HTML
 python-dotenv==1.1.1     # Para carregar variáveis de ambiente (credenciais do banco de dados) do arquivo .env.
 
 # --- Dependências de Suporte do FastAPI e Uvicorn ---
-# Estas bibliotecas são, em sua maioria, instaladas como dependências do FastAPI e Uvicorn.
 anyio==4.11.0            # Biblioteca de concorrência assíncrona, usada pelo Starlette/FastAPI.
 starlette==0.48.0        # O toolkit ASGI sobre o qual o FastAPI é construído.
 h11==0.16.0              # Implementação do protocolo HTTP/1.1 para o Uvicorn.
@@ -43,7 +42,7 @@ Jinja2==3.1.6            # Motor de templates, usado internamente pelo FastAPI p
 PyYAML==6.0.3            # Para ler e escrever arquivos YAML (usado pela documentação OpenAPI).
 watchfiles==1.1.0        # Usado pelo Uvicorn para o modo `--reload`, para detectar alterações nos arquivos.
 websockets==15.0.1       # Para suporte a WebSockets no Uvicorn (não usado ativamente, mas é uma dependência).
-httptools==0.6.4         # Parser de protocolo HTTP.
+httptools==0.6.4         # Parser de protocolo HTTP/1.1.
 httpx==0.28.1            # Cliente HTTP assíncrono (instalado como dependência, mas usamos `requests` nos scripts).
 
 # --- Dependências de Suporte de Outras Bibliotecas ---

@@ -1,0 +1,24 @@
+# =======================================================================================
+# ARQUIVO DE CONFIGURAÇÃO DE PROJETO PYTHON (PEP 621)
+# =======================================================================================
+# FLUXO E A LÓGICA:
+# 1. Este arquivo declara que o diretório 'backend' não é apenas uma coleção de
+#    scripts, mas sim um "pacote" Python instalável.
+# 2. Ele define o nome do projeto (`overwatch_meta_analyzer`) e as ferramentas
+#    necessárias para construí-lo (setuptools).
+# 3. Quando o comando `pip install -e .` é executado, o pip lê este arquivo e
+#    registra o projeto no ambiente virtual.
+#
+# RAZÃO DE EXISTIR: Modernizar a estrutura do projeto. Ao tratá-lo como um pacote,
+# eliminamos a necessidade de manipulações manuais e frágeis do `sys.path` nos
+# scripts, tornando as importações de módulos (como 'utils') robustas, limpas e
+# reconhecidas por todas as ferramentas de desenvolvimento (IDEs, linters, etc.).
+# =======================================================================================
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "overwatch_meta_analyzer"
+version = "0.1.1" # Versão atualizada para refletir as melhorias

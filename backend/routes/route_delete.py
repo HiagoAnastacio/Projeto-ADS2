@@ -5,7 +5,7 @@
 # 1. Define um endpoint genérico `DELETE /api/delete/{table_name}/{item_id}`.
 # 2. Recebe 'table_name' e 'item_id' da URL.
 # 3. Realiza uma verificação de segurança CRÍTICA, validando se o `table_name`
-#    está na `TABLES_WHITELIST`. Isso previne a exclusão de dados em tabelas não autorizadas.
+#    está na `ALLOWED_WRITE_TABLES` (importada do config.py).
 # 4. Constrói a Query SQL `DELETE` dinâmica.
 # 5. Chama a função `execute` da camada DAO para executar o comando.
 # 6. Verifica se uma linha foi de fato afetada e retorna 404 se o ID não existir.
@@ -14,18 +14,12 @@
 # registros em tabelas autorizadas, protegido por uma lista branca (whitelist).
 # =======================================================================================
 
-from fastapi import APIRouter, HTTPException, Path, Depends
+from fastapi import APIRouter, HTTPException, Path
 from utils.function_execute import execute
+from app.security.table_whitelist_security import ALLOWED_WRITE_TABLES # <-- IMPORTAÇÃO CENTRALIZADA
 
 # Variável 'router' (Escopo Global/Módulo).
 router = APIRouter()
-
-# Lista de tabelas permitidas para exclusão. CRÍTICO para a segurança.
-TABLES_WHITELIST = [
-    "hero", "map", "role", "skill_rank", "game_mode", "patch_note",
-    "hero_win", "hero_pick", "hero_map_win", "hero_map_pick", 
-    "hero_rank_win", "hero_rank_pick", "hero_rank_map_win", "hero_rank_map_pick"
-]
 
 @router.delete("/delete/{table_name}/{item_id}", tags=["Generic Data Management"])
 async def delete_data(
@@ -35,8 +29,8 @@ async def delete_data(
     """Exclui um item de uma tabela autorizada com base no ID."""
 
     # 1. Verificação de Segurança (Whitelist)
-    if table_name not in TABLES_WHITELIST:
-        raise HTTPException(status_code=400, detail=f"A tabela '{table_name}' não é válida para esta operação.")
+    if table_name not in ALLOWED_WRITE_TABLES: # <-- USA A LISTA CENTRALIZADA
+        raise HTTPException(status_code=403, detail=f"A tabela '{table_name}' não permite exclusão via API.")
 
     try:
         # Constrói a query SQL, usando crases para segurança.
@@ -58,5 +52,5 @@ async def delete_data(
         # Re-levanta exceções HTTP já tratadas.
         raise e
     except Exception as e:
-        # Captura erros inesperados.
-        raise HTTPException(status_code=500, detail=f"Erro interno do servidor durante a exclusão: {e}")
+        # Captura qualquer outro erro inesperado.
+        raise HTTPException(status_code=500, detail=f"Erro interno no servidor: {e}")

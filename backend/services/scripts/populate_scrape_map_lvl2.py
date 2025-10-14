@@ -16,77 +16,61 @@ import sys
 import logging
 import requests
 from bs4 import BeautifulSoup
-from os.path import abspath, dirname
 from typing import List, Tuple, Dict
 
-# --- Configuração de Path e Logger ---
-project_root = dirname(dirname(dirname(abspath(__file__))))
-sys.path.append(project_root)
+# --- Configuração de Logger ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', stream=sys.stdout)
 logger = logging.getLogger(__name__)
 
 # --- Importações da Aplicação ---
-try:
-    from utils.function_execute import execute
-except ImportError as e:
-    logger.error(f"Erro ao importar módulos: {e}")
-    sys.exit(1)
+from utils.function_execute import execute
 
-def fetch_map_list_from_blizzard() -> List[Tuple[str, str]]:
-    """Extrai a lista de mapas e seus modos de jogo via Web Scraping da página de estatísticas."""
-    logger.info("--- Extraindo lista de mapas via Web Scraping do site da Blizzard (EN-US) ---")
-    
-    # --- CORREÇÃO AQUI ---
-    # A URL agora aponta para a versão em inglês (en-us) para corresponder aos dados de seed.
-    stats_url = "https://overwatch.blizzard.com/en-us/rates/"
-    
-    map_list = []
-
+# --- LÓGICA DE EXTRAÇÃO (EXTRACT) ---
+def fetch_and_parse_maps_from_web() -> List[Tuple[str, str]]:
+    """Busca e analisa o HTML para extrair a lista de mapas e seus modos de jogo."""
+    url = "https://overwatch.blizzard.com/pt-br/stats/pc/"
+    headers = {'User-Agent': 'Mozilla/5.0'}
     try:
-        response = requests.get(stats_url, timeout=15)
+        response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
-        
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # Lógica de scraping para encontrar o menu de seleção de mapas.
-        map_select = soup.find('select', {'id': 'filter-map-select'})
-
-        if not map_select:
-            logger.error("Não foi possível encontrar o menu de seleção de mapas no HTML da página. A estrutura do site pode ter mudado.")
+        maps_list = []
+        map_dropdown = soup.find('select', {'data-js': 'filter-map'})
+        if not map_dropdown:
+            logger.error("Dropdown de mapas não encontrado na página. A estrutura do site pode ter mudado.")
             return []
 
-        # Itera sobre cada <optgroup>, que representa um modo de jogo.
-        for optgroup in map_select.find_all('optgroup'):
-            game_mode_name = optgroup.get('label')
-            
-            # Itera sobre cada <option> dentro do grupo, que é um mapa.
+        for optgroup in map_dropdown.find_all('optgroup'):
+            game_mode = optgroup['label']
             for option in optgroup.find_all('option'):
-                map_name = option.text.strip()
-                
-                if map_name and game_mode_name:
-                    map_list.append((map_name, game_mode_name.strip()))
-
-        logger.info(f"Extração concluída. {len(map_list)} mapas encontrados.")
-        return map_list
-
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Falha ao buscar a página de estatísticas: {e}")
+                map_name = option.text
+                if map_name != "All Maps":
+                    maps_list.append((map_name, game_mode))
+        return maps_list
+    except requests.RequestException as e:
+        logger.error(f"Erro ao buscar a página de estatísticas: {e}")
         return []
 
+# --- LÓGICA DE CARGA (LOAD) ---
 def load_maps_to_db(maps_to_insert: List[Tuple[str, str]], game_mode_map: Dict[str, int]):
-    """Insere ou atualiza registros na tabela 'map'."""
+    """Insere os mapas extraídos no banco de dados."""
+    if not maps_to_insert:
+        logger.warning("Nenhuma lista de mapas para carregar.")
+        return
+        
     sql = "INSERT INTO `map` (`map_name`, `game_mode_id`) VALUES (%s, %s) ON DUPLICATE KEY UPDATE `map_name`=VALUES(`map_name`);"
     count = 0
     for map_name, game_mode_name in maps_to_insert:
-        # A correspondência agora funcionará (ex: 'Control' == 'Control').
         game_mode_id = game_mode_map.get(game_mode_name)
         if game_mode_id:
             rows_affected = execute(sql, (map_name, game_mode_id))
             if rows_affected > 0: count += 1
         else:
-            logger.warning(f"Modo de jogo '{game_mode_name}' para o mapa '{map_name}' não encontrado no banco. Verifique se os nomes correspondem.")
+            logger.warning(f"Modo de jogo '{game_mode_name}' para o mapa '{map_name}' não encontrado no banco.")
     logger.info(f"{count} novo(s) mapa(s) inserido(s).")
 
+# --- ORQUESTRAÇÃO ---
 def main_scrape_and_populate_maps():
     """Função principal que orquestra a extração e carga dos mapas."""
     logger.info("Iniciando processo de população da dimensão 'map'...")
@@ -96,14 +80,12 @@ def main_scrape_and_populate_maps():
         return
     game_mode_map = {item['game_mode_name']: item['game_mode_id'] for item in game_modes_from_db}
     
-    dynamic_map_list = fetch_map_list_from_blizzard()
-    
-    if not dynamic_map_list:
-        logger.error("Nenhum mapa foi extraído. O pipeline não pode continuar sem mapas.")
-        return
-
-    load_maps_to_db(dynamic_map_list, game_mode_map)
-    logger.info("\nPopulação da dimensão 'map' concluída.")
+    dynamic_map_list = fetch_and_parse_maps_from_web()
+    if dynamic_map_list:
+        load_maps_to_db(dynamic_map_list, game_mode_map)
+    else:
+        logger.error("Falha ao extrair a lista de mapas da web.")
+    logger.info("Processo de população de mapas concluído.")
 
 if __name__ == "__main__":
     main_scrape_and_populate_maps()
