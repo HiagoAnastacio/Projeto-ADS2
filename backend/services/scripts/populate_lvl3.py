@@ -29,9 +29,8 @@ logger = logging.getLogger(__name__)
 
 # --- Importações ---
 try:
-    from utils.function_execute import execute #
-    # ALTERAÇÃO: Removida a importação da função 'transform_api_data' que não existe.
-    from utils.extraction_helpers import fetch_api_data #
+    from utils.function_execute import execute
+    from utils.extraction_helpers import fetch_api_data
 except ImportError:
     logger.critical("Erro fatal: Não foi possível importar os módulos `utils`. "
                     "Certifique-se de que o projeto foi instalado com `pip install -e .` "
@@ -39,20 +38,18 @@ except ImportError:
     sys.exit(1)
 
 # --- LÓGICA DE CARGA (LOAD) ---
-def load_stats_to_db(records: Dict[str, Dict[str, float]], rank_id: int, map_id: int, hero_map: Dict[str, int]):
+def load_stats_to_db(records: Dict[str, Dict[str, float]], rank_id: int, map_id: int, hero_map: Dict[str, int]): #
     """Carrega as estatísticas transformadas para as tabelas de fato."""
     
-    # ALTERAÇÃO: Removido 'ON DUPLICATE KEY UPDATE' para criar log histórico.
     sql_win = """
         INSERT INTO `hero_rank_map_win` (`hero_id`, `rank_id`, `map_id`, `win_rate`)
         VALUES (%s, %s, %s, %s);
-    """
+    """ #
     
-    # ALTERAÇÃO: Removido 'ON DUPLICATE KEY UPDATE' para criar log histórico.
     sql_pick = """
         INSERT INTO `hero_rank_map_pick` (`hero_id`, `rank_id`, `map_id`, `pick_rate`)
         VALUES (%s, %s, %s, %s);
-    """
+    """ #
     
     insert_count_win = 0
     insert_count_pick = 0
@@ -63,12 +60,12 @@ def load_stats_to_db(records: Dict[str, Dict[str, float]], rank_id: int, map_id:
             try:
                 # Insere Win Rate
                 if "win_rate" in stats:
-                    execute(sql_win, (hero_id, rank_id, map_id, stats["win_rate"]))
+                    execute(sql_win, (hero_id, rank_id, map_id, stats["win_rate"])) #
                     insert_count_win += 1
                 
                 # Insere Pick Rate
                 if "pick_rate" in stats:
-                    execute(sql_pick, (hero_id, rank_id, map_id, stats["pick_rate"]))
+                    execute(sql_pick, (hero_id, rank_id, map_id, stats["pick_rate"])) #
                     insert_count_pick += 1
                     
             except Exception as e:
@@ -77,14 +74,16 @@ def load_stats_to_db(records: Dict[str, Dict[str, float]], rank_id: int, map_id:
     logger.info(f"Inseridos {insert_count_win} registros de win_rate e {insert_count_pick} registros de pick_rate.")
 
 # --- ORQUESTRAÇÃO ---
-def main_populate_facts(args):
+# ALTERAÇÃO: A função agora aceita 'limit' como um parâmetro opcional,
+# em vez de um objeto 'args' complexo.
+def main_populate_facts(limit: int = 0): #
     """Função principal que orquestra a busca e carga das estatísticas."""
     logger.info("--- LENDO DIMENSÕES DO BANCO DE DADOS ---")
     
     try:
-        heroes = execute("SELECT hero_id, hero_name FROM hero")
-        ranks = execute("SELECT rank_id, rank_name FROM `rank`")
-        maps = execute("SELECT map_id, map_name FROM map")
+        heroes = execute("SELECT hero_id, hero_name FROM hero") #
+        ranks = execute("SELECT rank_id, rank_name FROM `rank`") #
+        maps = execute("SELECT map_id, map_name FROM map") #
 
         if not all([heroes, ranks, maps]):
             logger.error("Uma ou mais tabelas de dimensão (hero, rank, map) estão vazias. "
@@ -103,14 +102,14 @@ def main_populate_facts(args):
         return
 
     logger.info("--- INICIANDO BUSCA E CARGA DE DADOS DE FATO (WIN/PICK RATE) ---")
-    base_url = "https://overwatch.blizzard.com/pt-br/stats/pc/"
+    base_url = "https://overwatch.blizzard.com/en-us/rates/data?"
     
     ranks_to_process = list(dims["ranks"].items())
     
-    # Lógica de --limit para testes
-    if args.limit > 0:
-        ranks_to_process = ranks_to_process[:args.limit]
-        logger.warning(f"Execução limitada aos primeiros {args.limit} rank(s) para fins de teste.")
+    # ALTERAÇÃO: Usa o parâmetro 'limit' diretamente.
+    if limit > 0:
+        ranks_to_process = ranks_to_process[:limit]
+        logger.warning(f"Execução limitada aos primeiros {limit} rank(s) para fins de teste.")
     
     total_ranks = len(ranks_to_process)
     total_maps = len(dims["maps"])
@@ -125,13 +124,11 @@ def main_populate_facts(args):
             
             api_url = f"{base_url}{rank_slug}/{map_slug}/"
             
-            # ALTERAÇÃO: A função 'fetch_api_data' já retorna os dados transformados,
-            # conforme a lógica do seu arquivo extraction_helpers.py
-            transformed_data = fetch_api_data(api_url)
+            transformed_data = fetch_api_data(api_url) #
             
             if transformed_data:
                 # O `load_stats_to_db` agora só carrega (Load)
-                load_stats_to_db(transformed_data, rank_id, map_id, dims["heroes"])
+                load_stats_to_db(transformed_data, rank_id, map_id, dims["heroes"]) #
             else:
                 logger.warning(f"Não foram encontrados dados (ou dados transformáveis) para Rank: '{rank_name}', Mapa: '{map_name}'")
             
@@ -149,4 +146,5 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     
-    main_populate_facts(args)
+    # ALTERAÇÃO: Passa apenas o valor 'limit', não o objeto 'args' inteiro.
+    main_populate_facts(limit=args.limit) #

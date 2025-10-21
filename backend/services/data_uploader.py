@@ -87,7 +87,7 @@ async def scheduler_lifespan(app):
     
     # Adiciona a tarefa ao agendador.
     # Para testes, você pode mudar o agendamento (ex: 'cron', second='*/10' para rodar a cada 10s).
-    scheduler.add_job(run_update_pipeline, 'cron', day_of_week='mon', hour=2, minute=30)
+    scheduler.add_job(run_update_pipeline, 'cron', day_of_week='tue', hour=15, minute=48)
     
     # Inicia o processo do agendador.
     scheduler.start()
