@@ -4,24 +4,23 @@
 # FLUXO E A LÓGICA:
 # 1. Define um endpoint genérico `POST /api/insert/{table_name}`.
 # 2. Recebe o `table_name` da URL e o corpo da requisição (JSON).
-# 3. (NOVO) Realiza uma verificação de segurança para garantir que a tabela permite escrita.
-# 4. **Injeção de Dependência:** Antes de executar a lógica principal, o FastAPI chama
-#    a dependência `validate_body`, que valida o JSON contra o schema Pydantic correto.
+# 3. (Segurança) Valida `table_name` contra a `ALLOWED_WRITE_TABLES`.
+# 4. (Validação) Usa a dependência `validate_body` para garantir que o JSON
+#    enviado corresponda ao schema Pydantic daquela tabela.
 # 5. A rota recebe o dicionário já validado (`data_dict`) da dependência.
-# 6. Constrói a query `INSERT INTO ...` dinamicamente com base nas chaves e valores
-#    do dicionário validado.
+# 6. Constrói a query `INSERT INTO ...` dinamicamente e de forma segura.
 # 7. Chama a função `execute` da camada DAO para inserir os dados.
-# 8. Retorna uma mensagem de sucesso com o ID do novo registro.
 #
-# RAZÃO DE EXISTIR: Fornecer um ponto de entrada seguro e genérico para a criação de
-# novos registros em qualquer tabela autorizada.
+# RAZÃO DE EXISTIR: Fornecer um ponto de entrada seguro e validado para a criação
+# de novos registros em tabelas de dimensão autorizadas.
 # =======================================================================================
 
 from fastapi import APIRouter, HTTPException, Path, Depends, Body 
 from typing import Dict, Any
 from utils.function_execute import execute
 from utils.dependencies import validate_body
-from app.security.table_whitelist_security import ALLOWED_WRITE_TABLES # <-- IMPORTAÇÃO CENTRALIZADA
+# Importa a whitelist de segurança
+from app.security.table_whitelist_security import ALLOWED_WRITE_TABLES 
 
 # Variável 'router' (Escopo Global/Módulo).
 router = APIRouter()
@@ -32,16 +31,40 @@ async def insert_data(
     request_body: Dict[str, Any] = Body(..., description="Corpo JSON com os dados para inserir."),
     data_dict: Dict[str, Any] = Depends(validate_body) 
 ):
-    """Insere um novo item em uma tabela autorizada."""
+    """
+    Insere um novo registro em uma tabela autorizada.
+    
+    COMO USAR:
+    
+    1.  **Endpoint:** `POST /api/insert/{table_name}`
+        -   Ex: `POST /api/insert/hero`
+    
+    2.  **Corpo da Requisição (Body):**
+        -   Deve ser um JSON contendo os dados do novo registro.
+        -   Os campos DEVEM corresponder ao schema Pydantic da tabela.
+        -   Use a rota `GET /api/models/{table_name}/example` para ver um exemplo.
+        -   Exemplo de Body para `hero`:
+            ```json
+            {
+              "hero_name": "Novo Heroi",
+              "role_id": 1,
+              "hero_icon_img_link": "[http://example.com/icon.png](http://example.com/icon.png)"
+            }
+            ```
+            
+    3.  **Segurança e Validação:**
+        -   A rota falhará se a tabela não estiver na whitelist de escrita.
+        -   A rota falhará se o JSON não passar na validação Pydantic (ex: campo faltando, tipo errado).
+    """
 
-    # 1. Verificação de Segurança (Whitelist) - CORREÇÃO CRÍTICA
+    # 1. Verificação de Segurança (Whitelist)
     if table_name not in ALLOWED_WRITE_TABLES:
         raise HTTPException(status_code=403, detail=f"A tabela '{table_name}' não permite inserção via API.")
     
     # Constrói dinamicamente as partes da query SQL.
-    columns = ", ".join([f"`{col}`" for col in data_dict.keys()]) # Ex: `hero_name`, `role_id`
-    placeholders = ", ".join(["%s"] * len(data_dict)) # Ex: %s, %s
-    values = tuple(data_dict.values()) # Tupla com os valores a serem inseridos.
+    columns = ", ".join([f"`{col}`" for col in data_dict.keys()]) 
+    placeholders = ", ".join(["%s"] * len(data_dict)) 
+    values = tuple(data_dict.values()) 
 
     try:
         # Monta a query final.

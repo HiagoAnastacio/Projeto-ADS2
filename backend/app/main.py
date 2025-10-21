@@ -18,8 +18,8 @@ import logging
 
 # --- Importações da Aplicação ---
 from routes import route_get, route_post, route_update, route_delete
-from routes.docs import route_schema_models
-from app.security.ratelimt_and_CORS_security import configure_middlewares
+from routes.schema import route_schema_models
+from app.security.ratelimiter_and_CORS_security import configure_middlewares
 # Importa o gerenciador de ciclo de vida do nosso serviço de agendamento.
 from services.data_uploader import scheduler_lifespan
 

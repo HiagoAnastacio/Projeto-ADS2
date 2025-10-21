@@ -28,7 +28,6 @@
 # Razão: São arquivos temporários gerados pelo Python para otimizar a execução.
 **/__pycache__/
 
-
 # ==================================
 # Regras do Frontend (JavaScript/Vite)
 # ==================================

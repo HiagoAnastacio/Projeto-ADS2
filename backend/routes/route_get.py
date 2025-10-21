@@ -4,9 +4,9 @@
 # FLUXO E A LÓGICA:
 # 1. Define um endpoint genérico `GET /api/get/{table_name}`.
 # 2. Recebe o nome da tabela (`table_name`) a partir do parâmetro da URL.
-# 3. Realiza uma verificação de segurança CRÍTICA, garantindo que o `table_name`
-#    esteja na `ALLOWED_GET_TABLES` (importada do config.py). Isso previne que um usuário
-#    tente acessar tabelas sensíveis ou internas.
+# 3. (ALTERAÇÃO) Realiza uma verificação de segurança CRÍTICA, importando a
+#    lista `ALLOWED_GET_TABLES` do módulo de segurança 'table_whitelist_security'
+#    e garantindo que o `table_name` esteja nela.
 # 4. Constrói a query SQL `SELECT * FROM ...` dinamicamente.
 # 5. Chama a função `execute` da camada DAO para buscar os dados no banco.
 # 6. Retorna os resultados como uma resposta JSON ou um erro HTTP 404 se nada for encontrado.
@@ -17,20 +17,61 @@
 
 from fastapi import APIRouter, HTTPException, Path
 from utils.function_execute import execute
-from app.security.table_whitelist_security import ALLOWED_GET_TABLES # <-- IMPORTAÇÃO CENTRALIZADA
+# ALTERAÇÃO: Importa a whitelist centralizada do arquivo de segurança
+from app.security.table_whitelist_security import ALLOWED_GET_TABLES
 
 # Variável 'router' (Escopo Global/Módulo): Instância do roteador para este módulo.
 router = APIRouter()
+
+# ALTERAÇÃO: A 'TABLES_WHITELIST' local foi removida para usar a importada.
 
 @router.get("/get/{table_name}", tags=["Generic Data Management"])
 async def get_tabela(
     # Variável 'table_name' (Escopo de Requisição): Capturada da URL.
     table_name: str = Path(..., description="Nome da tabela para consulta")
 ):
-    """Consulta genérica e segura para tabelas autorizadas."""
+    """
+    Consulta genérica e segura para tabelas e views autorizadas.
+    
+    Retorna todos os registros da tabela ou view especificada.
+    
+    COMO USAR:
+    
+    1.  **Endpoint:** `GET /api/get/{table_name}`
+        -   Exemplo (Tabela): `GET /api/get/hero`
+        -   Exemplo (View): `GET /api/get/vw_hero_win`
+    
+    2.  **Parâmetros (Path):**
+        -   `table_name`: O nome exato da tabela ou view que você deseja consultar.
+            
+    3.  **Resposta (Response):**
+        -   Retorna um array JSON com todos os registros encontrados.
+        -   Exemplo de Resposta para `GET /api/get/hero`:
+            ```json
+            [
+              {
+                "hero_id": 1,
+                "hero_name": "Ana",
+                "role_id": 3,
+                "hero_icon_img_link": "[http://example.com/icon.png](http://example.com/icon.png)"
+              },
+              {
+                "hero_id": 2,
+                "hero_name": "Ashe",
+                "role_id": 2,
+                "hero_icon_img_link": "[http://example.com/icon2.png](http://example.com/icon2.png)"
+              }
+            ]
+            ```
+            
+    4.  **Segurança e Validação:**
+        -   A rota falhará (400 Bad Request) se a `table_name` não estiver na `ALLOWED_GET_TABLES`.
+        -   A rota falhará (404 Not Found) se a tabela for válida, mas estiver vazia.
+    """
     
     # 1. Verificação de Segurança (Whitelist)
-    if table_name not in ALLOWED_GET_TABLES:  # <-- USA A LISTA CENTRALIZADA
+    # ALTERAÇÃO: Usa a lista 'ALLOWED_GET_TABLES' importada
+    if table_name not in ALLOWED_GET_TABLES:
         # Se a tabela não for permitida, levanta um erro 400 (Bad Request).
         raise HTTPException(status_code=400, detail=f"A tabela '{table_name}' não é válida para esta consulta.")
     
