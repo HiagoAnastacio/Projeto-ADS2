@@ -40,86 +40,193 @@ CREATE TABLE `game_mode` (
 -- Nível 2: Dimensões Dependentes
 CREATE TABLE `hero` (
   `hero_id` INT NOT NULL AUTO_INCREMENT,
+  `hero_name` VARCHAR(40) NOT NULL,
   `role_id` INT NOT NULL,
-  `hero_name` VARCHAR(45) NOT NULL,
-  `hero_icon_img_link` VARCHAR(1000) DEFAULT NULL,
+  `hero_icon_img_link` VARCHAR(300) DEFAULT NULL,
   `date_of_the_data` DATETIME DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`hero_id`),
-  CONSTRAINT `fk_hero_role` FOREIGN KEY (`role_id`) REFERENCES `role` (`role_id`) ON DELETE CASCADE
+  KEY `fk_role_idx` (`role_id`),
+  CONSTRAINT `fk_role` FOREIGN KEY (`role_id`) REFERENCES `role` (`role_id`)
 );
 
 CREATE TABLE `map` (
   `map_id` INT NOT NULL AUTO_INCREMENT,
-  `game_mode_id` INT NOT NULL,
   `map_name` VARCHAR(45) NOT NULL,
+  `game_mode_id` INT NOT NULL,
   `date_of_the_data` DATETIME DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`map_id`),
-  CONSTRAINT `fk_map_game_mode` FOREIGN KEY (`game_mode_id`) REFERENCES `game_mode` (`game_mode_id`) ON DELETE CASCADE
+  KEY `fk_game_mode_idx` (`game_mode_id`),
+  CONSTRAINT `fk_game_mode` FOREIGN KEY (`game_mode_id`) REFERENCES `game_mode` (`game_mode_id`)
 );
 
--- Nível 3: Tabelas de Fato (Dados Granulares)
+-- =======================================================================================
+-- ETAPA 3: Criação de Tabelas de Fato (com PKs compostas para Histórico)
+-- =======================================================================================
+
 CREATE TABLE `hero_rank_map_win` (
-  `hero_rank_map_win_id` INT NOT NULL AUTO_INCREMENT,
   `hero_id` INT NOT NULL,
-  `map_id` INT NOT NULL,
   `rank_id` INT NOT NULL,
-  `win_rate` DECIMAL(5,2) NOT NULL,
+  `map_id` INT NOT NULL,
+  `win_rate` FLOAT NOT NULL,
   `date_of_the_data` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`hero_rank_map_win_id`),
-  CONSTRAINT `fk_hrw_hero` FOREIGN KEY (`hero_id`) REFERENCES `hero` (`hero_id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_hrw_map` FOREIGN KEY (`map_id`) REFERENCES `map` (`map_id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_hrw_rank` FOREIGN KEY (`rank_id`) REFERENCES `rank` (`rank_id`) ON DELETE CASCADE
+  -- A CHAVE PRIMÁRIA AGORA INCLUI A DATA, PERMITINDO HISTÓRICO
+  PRIMARY KEY (`hero_id`, `rank_id`, `map_id`, `date_of_the_data`),
+  KEY `fk_hero_win_idx` (`hero_id`),
+  KEY `fk_rank_win_idx` (`rank_id`),
+  KEY `fk_map_win_idx` (`map_id`),
+  CONSTRAINT `fk_hero_win` FOREIGN KEY (`hero_id`) REFERENCES `hero` (`hero_id`),
+  CONSTRAINT `fk_rank_win` FOREIGN KEY (`rank_id`) REFERENCES `rank` (`rank_id`),
+  CONSTRAINT `fk_map_win` FOREIGN KEY (`map_id`) REFERENCES `map` (`map_id`)
 );
 
 CREATE TABLE `hero_rank_map_pick` (
-  `hero_rank_map_pick_id` INT NOT NULL AUTO_INCREMENT,
   `hero_id` INT NOT NULL,
-  `map_id` INT NOT NULL,
   `rank_id` INT NOT NULL,
-  `pick_rate` DECIMAL(5,2) NOT NULL,
+  `map_id` INT NOT NULL,
+  `pick_rate` FLOAT NOT NULL,
   `date_of_the_data` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`hero_rank_map_pick_id`),
-  CONSTRAINT `fk_hrp_hero` FOREIGN KEY (`hero_id`) REFERENCES `hero` (`hero_id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_hrp_map` FOREIGN KEY (`map_id`) REFERENCES `map` (`map_id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_hrp_rank` FOREIGN KEY (`rank_id`) REFERENCES `rank` (`rank_id`) ON DELETE CASCADE
+  -- A CHAVE PRIMÁRIA AGORA INCLUI A DATA, PERMITINDO HISTÓRICO
+  PRIMARY KEY (`hero_id`, `rank_id`, `map_id`, `date_of_the_data`),
+  KEY `fk_hero_pick_idx` (`hero_id`),
+  KEY `fk_rank_pick_idx` (`rank_id`),
+  KEY `fk_map_pick_idx` (`map_id`),
+  CONSTRAINT `fk_hero_pick` FOREIGN KEY (`hero_id`) REFERENCES `hero` (`hero_id`),
+  CONSTRAINT `fk_rank_pick` FOREIGN KEY (`rank_id`) REFERENCES `rank` (`rank_id`),
+  CONSTRAINT `fk_map_pick` FOREIGN KEY (`map_id`) REFERENCES `map` (`map_id`)
 );
-
--- =======================================================================================
--- ETAPA 3: Adicionar Constraints de Unicidade (UNIQUE KEYS)
--- =======================================================================================
-ALTER TABLE `role` ADD UNIQUE KEY `role_UNIQUE` (`role`);
-ALTER TABLE `rank` ADD UNIQUE KEY `rank_name_UNIQUE` (`rank_name`);
-ALTER TABLE `game_mode` ADD UNIQUE KEY `game_mode_name_UNIQUE` (`game_mode_name`);
-ALTER TABLE `hero` ADD UNIQUE KEY `hero_name_UNIQUE` (`hero_name`);
-ALTER TABLE `map` ADD UNIQUE KEY `map_name_UNIQUE` (`map_name`);
-
--- Adiciona a chave única composta para as tabelas de fato, essencial para o `ON DUPLICATE KEY UPDATE` funcionar.
-ALTER TABLE `hero_rank_map_win` ADD UNIQUE KEY `unique_win_combination` (`hero_id`, `map_id`, `rank_id`);
-ALTER TABLE `hero_rank_map_pick` ADD UNIQUE KEY `unique_pick_combination` (`hero_id`, `map_id`, `rank_id`);
-
--- =======================================================================================
--- ETAPA 4: Inserir Dados Estáticos de Nível 1 (Seed com atualização de timestamp)
--- =======================================================================================
-INSERT INTO `role` (`role`) VALUES ('TANK'), ('DAMAGE'), ('SUPPORT')
-ON DUPLICATE KEY UPDATE role=VALUES(role), date_of_the_data=CURRENT_TIMESTAMP;
-
-INSERT INTO `rank` (`rank_name`) VALUES ('Bronze'), ('Silver'), ('Gold'), ('Platinum'), ('Diamond'), ('Master'), ('Grandmaster')
-ON DUPLICATE KEY UPDATE rank_name=VALUES(rank_name), date_of_the_data=CURRENT_TIMESTAMP;
-
-INSERT INTO `game_mode` (`game_mode_name`) VALUES ('Control'), ('Escort'), ('Flashpoint'), ('Hybrid'), ('Push'), ('Clash'), ('Assault')
-ON DUPLICATE KEY UPDATE game_mode_name=VALUES(game_mode_name), date_of_the_data=CURRENT_TIMESTAMP;
-
--- =======================================================================================
--- ETAPA 5: Criar as Views para os Dados Agregados (com timestamp da última atualização)
--- =======================================================================================
-CREATE OR REPLACE VIEW `vw_hero_win` AS SELECT `hero_id`, AVG(`win_rate`) AS `win_rate`, MAX(`date_of_the_data`) as `last_updated` FROM `hero_rank_map_win` GROUP BY `hero_id`;
-CREATE OR REPLACE VIEW `vw_hero_pick` AS SELECT `hero_id`, AVG(`pick_rate`) AS `pick_rate`, MAX(`date_of_the_data`) as `last_updated` FROM `hero_rank_map_pick` GROUP BY `hero_id`;
-CREATE OR REPLACE VIEW `vw_hero_map_win` AS SELECT `hero_id`, `map_id`, AVG(`win_rate`) AS `win_rate`, MAX(`date_of_the_data`) as `last_updated` FROM `hero_rank_map_win` GROUP BY `hero_id`, `map_id`;
-CREATE OR REPLACE VIEW `vw_hero_map_pick` AS SELECT `hero_id`, `map_id`, AVG(`pick_rate`) AS `pick_rate`, MAX(`date_of_the_data`) as `last_updated` FROM `hero_rank_map_pick` GROUP BY `hero_id`, `map_id`;
-CREATE OR REPLACE VIEW `vw_hero_rank_win` AS SELECT `hero_id`, `rank_id`, AVG(`win_rate`) AS `win_rate`, MAX(`date_of_the_data`) as `last_updated` FROM `hero_rank_map_win` GROUP BY `hero_id`, `rank_id`;
-CREATE OR REPLACE VIEW `vw_hero_rank_pick` AS SELECT `hero_id`, `rank_id`, AVG(`pick_rate`) AS `pick_rate`, MAX(`date_of_the_data`) as `last_updated` FROM `hero_rank_map_pick` GROUP BY `hero_id`, `rank_id`;
 
 -- Reativa a verificação de chaves estrangeiras
 SET FOREIGN_KEY_CHECKS=1;
 
+-- =======================================================================================
+-- ETAPA 4: Criação de VIEWS (para exibir o snapshot MAIS RECENTE dos dados)
+-- =======================================================================================
+
+-- 4.1. Views Base (As mais granulares, mostram apenas o último registro de cada combinação)
+-- Limpo de caracteres invisíveis.
+
+CREATE OR REPLACE VIEW `vw_hero_rank_map_win_latest` AS
+WITH RankedData AS (
+    SELECT 
+        h.hero_id,
+        r.rank_id,
+        m.map_id,
+        f.win_rate,
+        f.date_of_the_data,
+        ROW_NUMBER() OVER (
+            PARTITION BY f.hero_id, f.rank_id, f.map_id 
+            ORDER BY f.date_of_the_data DESC
+        ) as rn
+    FROM 
+        hero_rank_map_win f
+    JOIN hero h ON f.hero_id = h.hero_id
+    JOIN  `rank` r ON f.rank_id = r.rank_id
+    JOIN map m ON f.map_id = m.map_id
+)
+SELECT * FROM RankedData WHERE rn = 1;
+
+CREATE OR REPLACE VIEW `vw_hero_rank_map_pick_latest` AS
+WITH RankedData AS (
+    SELECT 
+        h.hero_id,
+        r.rank_id,
+        m.map_id,
+        f.pick_rate,
+        f.date_of_the_data,
+        ROW_NUMBER() OVER (
+            PARTITION BY f.hero_id, f.rank_id, f.map_id 
+            ORDER BY f.date_of_the_data DESC
+        ) as rn
+    FROM 
+        hero_rank_map_pick f
+    JOIN hero h ON f.hero_id = h.hero_id
+    JOIN  `rank` r ON f.rank_id = r.rank_id
+    JOIN map m ON f.map_id = m.map_id
+)
+SELECT * FROM RankedData WHERE rn = 1;
+
+
+-- 4.2. Views Agregadas (Construídas a partir das Views Base para performance e DRY)
+
+CREATE OR REPLACE VIEW `vw_hero_rank_win` AS 
+SELECT 
+    hero_id, 
+    rank_id, 
+    AVG(win_rate) AS win_rate, 
+    MAX(date_of_the_data) AS last_updated 
+FROM `vw_hero_rank_map_win_latest` 
+GROUP BY hero_id, rank_id;
+
+CREATE OR REPLACE VIEW `vw_hero_rank_pick` AS 
+SELECT 
+    hero_id, 
+    rank_id, 
+    AVG(pick_rate) AS pick_rate, 
+    MAX(date_of_the_data) AS last_updated 
+FROM `vw_hero_rank_map_pick_latest` 
+GROUP BY hero_id, rank_id;
+
+CREATE OR REPLACE VIEW `vw_hero_map_win` AS 
+SELECT 
+    hero_id, 
+    map_id, 
+    AVG(win_rate) AS win_rate, 
+    MAX(date_of_the_data) AS last_updated 
+FROM `vw_hero_rank_map_win_latest` 
+GROUP BY hero_id, map_id;
+
+CREATE OR REPLACE VIEW `vw_hero_map_pick` AS 
+SELECT 
+    hero_id, 
+    map_id, 
+    AVG(pick_rate) AS pick_rate, 
+    MAX(date_of_the_data) AS last_updated 
+FROM `vw_hero_rank_map_pick_latest` 
+GROUP BY hero_id, map_id;
+
+CREATE OR REPLACE VIEW `vw_hero_win` AS 
+SELECT 
+    hero_id, 
+    AVG(win_rate) AS win_rate, 
+    MAX(last_updated) AS last_updated 
+FROM `vw_hero_rank_win` 
+GROUP BY hero_id;
+
+CREATE OR REPLACE VIEW `vw_hero_pick` AS 
+SELECT 
+    hero_id, 
+    AVG(pick_rate) AS pick_rate, 
+    MAX(last_updated) AS last_updated 
+FROM `vw_hero_rank_pick` 
+GROUP BY hero_id;
+
+-- =======================================================================================
+-- ETAPA 5: SEED (INSERÇÃO DE DADOS INICIAIS NAS DIMENSÕES)
+-- =======================================================================================
+
+INSERT INTO `role` (`role`) VALUES
+('DAMAGE'),
+('SUPPORT'),
+('TANK');
+
+INSERT INTO `rank` (`rank_name`) VALUES
+('Bronze'),
+('Silver'),
+('Gold'),
+('Platinum'),
+('Diamond'),
+('Master'),
+('Grandmaster and Champion');
+
+INSERT INTO `game_mode` (`game_mode_name`) VALUES
+('Control'),
+('Escort'),
+('Flashpoint'),
+('Hybrid'),
+('Push'),
+('Clash');
+
+-- =======================================================================================
+-- ETAPA 6: CONFIRMAÇÃO DE CONCLUSÃO
+-- =======================================================================================
 SELECT 'Banco de dados recriado, tabelas, constraints, seeds e views (com suporte temporal) aplicados com sucesso.' AS status;

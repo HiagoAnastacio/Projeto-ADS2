@@ -1,66 +1,45 @@
-# =======================================================================================
-# ARQUIVO DE DEPENDÊNCIAS DO PROJETO (BACKEND)
-# =======================================================================================
-# FLUXO E A LÓGICA:
-# 1. Este arquivo lista todas as bibliotecas Python externas que o projeto backend necessita para funcionar.
-# 2. O comando `pip install -r requirements.txt` lê este arquivo e instala cada
-#    biblioteca listada, com sua versão exata, dentro do ambiente virtual.
-#
-# RAZÃO DE EXISTIR: Garantir um ambiente de desenvolvimento e produção reproduzível.
-# Qualquer desenvolvedor, em qualquer máquina, pode recriar o ambiente exato do projeto
-# simplesmente instalando as dependências definidas aqui.
-# =======================================================================================
-
-# --- Framework Principal e Servidor ---
-fastapi==0.117.1          # O framework web assíncrono para a construção da API RESTful.
-uvicorn==0.37.0          # O servidor ASGI de alta performance que executa a aplicação FastAPI.
-
-# --- Validação e Tipagem de Dados ---
-pydantic==2.11.9         # Essencial para a validação rigorosa de dados do FastAPI e para a definição dos schemas da API.
-pydantic_core==2.33.2    # O núcleo de performance do Pydantic, escrito em Rust.
-email-validator==2.3.0   # Dependência do Pydantic para validar tipos de dados de e-mail (embora não usado diretamente, é uma dependência).
-typing_extensions==4.15.0 # Fornece backports de novas funcionalidades de tipagem do Python.
-
-# --- Banco de Dados ---
-mysql-connector-python==9.4.0 # O driver oficial para conectar a aplicação Python ao banco de dados MySQL.
-
-# --- Pipeline de Dados e Coleta (ETL) ---
-requests==2.32.5         # Biblioteca para fazer as requisições HTTP para a API da Blizzard e para o scraping.
-APScheduler==3.11.0      # Biblioteca usada pelo 'data_uploader' para agendar a execução periódica dos scripts de população.
-beautifulsoup4==4.14.2   # Biblioteca para fazer o Web Scraping (parsing do HTML) da página de mapas da Blizzard.
-
-# --- Utilitários e Configuração ---
-python-dotenv==1.1.1     # Para carregar variáveis de ambiente (credenciais do banco de dados) do arquivo .env.
-
-# --- Dependências de Suporte do FastAPI e Uvicorn ---
-anyio==4.11.0            # Biblioteca de concorrência assíncrona, usada pelo Starlette/FastAPI.
-starlette==0.48.0        # O toolkit ASGI sobre o qual o FastAPI é construído.
-h11==0.16.0              # Implementação do protocolo HTTP/1.1 para o Uvicorn.
-click==8.3.0             # Para criar interfaces de linha de comando (usado por dependências do FastAPI).
-python-multipart==0.0.20 # Necessário para o FastAPI lidar com upload de arquivos e dados de formulário.
-Jinja2==3.1.6            # Motor de templates, usado internamente pelo FastAPI para a página de documentação.
-PyYAML==6.0.3            # Para ler e escrever arquivos YAML (usado pela documentação OpenAPI).
-watchfiles==1.1.0        # Usado pelo Uvicorn para o modo `--reload`, para detectar alterações nos arquivos.
-websockets==15.0.1       # Para suporte a WebSockets no Uvicorn (não usado ativamente, mas é uma dependência).
-httptools==0.6.4         # Parser de protocolo HTTP/1.1.
-httpx==0.28.1            # Cliente HTTP assíncrono (instalado como dependência, mas usamos `requests` nos scripts).
-
-# --- Dependências de Suporte de Outras Bibliotecas ---
-certifi==2025.8.3        # Pacote de certificados SSL, usado pelo `requests`.
-charset-normalizer==3.4.3 # Dependência do `requests` para detecção de codificação de caracteres.
-idna==3.10               # Dependência do `requests` para nomes de domínio internacionais.
-urllib3==2.5.0           # Dependência do `requests`.
-dnspython==2.8.0         # Dependência do `email-validator`.
-tzdata==2025.2           # Dependência do `APScheduler` para informações de fuso horário.
-tzlocal==5.3.1           # Dependência do `APScheduler` para detectar o fuso horário local.
-soupsieve==2.5           # Dependência do `BeautifulSoup4` para seletores CSS.
-
-# --- Formatação e CLI (usadas por ferramentas de desenvolvimento) ---
-colorama==0.4.6          # Para adicionar cor à saída do terminal.
-markdown-it-py==4.0.0    # Para renderizar Markdown.
-MarkupSafe==3.0.2        # Dependência do Jinja2 para "escapar" HTML de forma segura.
-mdurl==0.1.2             # Dependência do `markdown-it-py`.
-Pygments==2.19.2         # Para destaque de sintaxe em saídas de código.
-rich==14.1.0             # Para formatação rica no terminal.
-shellingham==1.5.4       # Dependência do `click`.
-typer==0.19.2            # Base para algumas ferramentas de linha de comando.
+annotated-types==0.7.0
+anyio==4.11.0
+APScheduler==3.11.0
+beautifulsoup4==4.14.2
+certifi==2025.8.3
+charset-normalizer==3.4.3
+click==8.3.0
+colorama==0.4.6
+dnspython==2.8.0
+email-validator==2.3.0
+fastapi==0.117.1
+h11==0.16.0
+httpcore==1.0.9
+httptools==0.6.4
+httpx==0.28.1
+idna==3.10
+Jinja2==3.1.6
+markdown-it-py==4.0.0
+MarkupSafe==3.0.2
+mdurl==0.1.2
+mysql-connector-python==9.4.0
+pydantic==2.11.9
+pydantic_core==2.33.2
+Pygments==2.19.2
+python-dotenv==1.1.1
+python-multipart==0.0.20
+python-slugify==8.0.4
+PyYAML==6.0.3
+requests==2.32.5
+rich==14.1.0
+shellingham==1.5.4
+slugify==0.0.1
+sniffio==1.3.1
+soupsieve==2.5
+starlette==0.48.0
+text-unidecode==1.3
+typer==0.19.2
+typing-inspection==0.4.2
+typing_extensions==4.15.0
+tzdata==2025.2
+tzlocal==5.3.1
+urllib3==2.5.0
+uvicorn==0.37.0
+watchfiles==1.1.0
+websockets==15.0.1

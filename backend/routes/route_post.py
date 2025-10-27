@@ -1,60 +1,74 @@
 # =======================================================================================
-# MÓDULO DE ROTA - POST (CRIAÇÃO)
+# MÓDULO DE ROTA - POST (CRIAÇÃO) - REFATORADO (RESTful & Pool)
 # =======================================================================================
-# FLUXO E A LÓGICA:
-# 1. Define um endpoint genérico `POST /api/insert/{table_name}`.
-# 2. Recebe o `table_name` da URL e o corpo da requisição (JSON).
-# 3. (NOVO) Realiza uma verificação de segurança para garantir que a tabela permite escrita.
-# 4. **Injeção de Dependência:** Antes de executar a lógica principal, o FastAPI chama
-#    a dependência `validate_body`, que valida o JSON contra o schema Pydantic correto.
-# 5. A rota recebe o dicionário já validado (`data_dict`) da dependência.
-# 6. Constrói a query `INSERT INTO ...` dinamicamente com base nas chaves e valores
-#    do dicionário validado.
-# 7. Chama a função `execute` da camada DAO para inserir os dados.
-# 8. Retorna uma mensagem de sucesso com o ID do novo registro.
-#
-# RAZÃO DE EXISTIR: Fornecer um ponto de entrada seguro e genérico para a criação de
-# novos registros em qualquer tabela autorizada.
+# ARQUITETURA:
+# 1. Rota RESTful (ex: POST /{table_name}).
+# 2. Usa `Depends(get_db_connection)` para injetar uma conexão do Pool.
+# 3. Usa `execute_api_query` (do db_manager).
 # =======================================================================================
 
 from fastapi import APIRouter, HTTPException, Path, Depends, Body 
 from typing import Dict, Any
-from utils.function_execute import execute
+from mysql.connector.connection import MySQLConnection
 from utils.dependencies import validate_body
-from app.security.table_whitelist_security import ALLOWED_WRITE_TABLES # <-- IMPORTAÇÃO CENTRALIZADA
+from app.security.table_whitelist_security import ALLOWED_WRITE_TABLES
+from utils.db_manager import get_db_connection, execute_api_query
 
-# Variável 'router' (Escopo Global/Módulo).
 router = APIRouter()
 
-@router.post("/insert/{table_name}", tags=["Generic Data Management"])
-async def insert_data(
-    table_name: str = Path(..., description="Nome da tabela para inserção."), 
+@router.post("/{table_name}", tags=["Resource Creation"])
+async def create_resource(
+    table_name: str = Path(..., description="Nome do recurso (tabela) para inserção."), 
     request_body: Dict[str, Any] = Body(..., description="Corpo JSON com os dados para inserir."),
-    data_dict: Dict[str, Any] = Depends(validate_body) 
+    data_dict: Dict[str, Any] = Depends(validate_body),
+    db_conn: MySQLConnection = Depends(get_db_connection)
 ):
-    """Insere um novo item em uma tabela autorizada."""
+    """
+    Insere um novo registro em uma tabela autorizada.
 
-    # 1. Verificação de Segurança (Whitelist) - CORREÇÃO CRÍTICA
-    if table_name not in ALLOWED_WRITE_TABLES:
-        raise HTTPException(status_code=403, detail=f"A tabela '{table_name}' não permite inserção via API.")
+    COMO USAR:
     
-    # Constrói dinamicamente as partes da query SQL.
-    columns = ", ".join([f"`{col}`" for col in data_dict.keys()]) # Ex: `hero_name`, `role_id`
-    placeholders = ", ".join(["%s"] * len(data_dict)) # Ex: %s, %s
-    values = tuple(data_dict.values()) # Tupla com os valores a serem inseridos.
+    1.  **Endpoint:** `POST /api/v1/{table_name}`
+        -   Ex: `POST /api/v1/hero`
+    
+    2.  **Corpo da Requisição (Body):**
+        -   Deve ser um JSON contendo os dados do novo registro.
+        -   Os campos DEVEM corresponder ao schema Pydantic da tabela.
+        -   Use a rota `GET /api/v1/models/{table_name}/example` para ver um exemplo.
+        -   Exemplo de Body para `hero`:
+            ```json
+            {
+              "hero_name": "Novo Heroi",
+              "role_id": 1,
+              "hero_icon_img_link": "[http://example.com/icon.png](http://example.com/icon.png)"
+            }
+            ```
+            
+    3.  **Segurança e Validação:**
+        -   A rota falhará com `403 Forbidden` se a tabela não estiver na `ALLOWED_WRITE_TABLES`.
+        -   A rota falhará com `422 Unprocessable Entity` se o JSON não passar na validação Pydantic (ex: campo faltando, tipo errado).
+    
+    4.  **Resposta (Sucesso 200):**
+        -   Retorna uma mensagem de sucesso, o ID do novo item e os dados inseridos.
+    """
+
+    if table_name not in ALLOWED_WRITE_TABLES:
+        raise HTTPException(status_code=403, detail=f"O recurso '{table_name}' não permite criação via API.")
+    
+    columns = ", ".join([f"`{col}`" for col in data_dict.keys()])
+    placeholders = ", ".join(["%s"] * len(data_dict))
+    values = tuple(data_dict.values())
 
     try:
-        # Monta a query final.
         sql = f"INSERT INTO `{table_name}` ({columns}) VALUES ({placeholders})"
-        # Chama a camada DAO.
-        new_id = execute(sql=sql, params=values)
+        new_id = execute_api_query(connection=db_conn, sql=sql, params=values)
         
-        # `execute` retorna o lastrowid para INSERTs.
         if not new_id:
-            raise HTTPException(status_code=500, detail="Não foi possível inserir os dados.")
+            raise HTTPException(status_code=500, detail="Falha ao criar o recurso, nenhum ID retornado.")
 
-        return {"message": f"Dados inseridos com sucesso na tabela '{table_name}'.", "new_id": new_id}
+        return {"message": f"Recurso criado com sucesso em '{table_name}'.", "id": new_id, **data_dict}
+
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro interno no servidor: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro interno: {e}")
