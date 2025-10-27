@@ -16,7 +16,7 @@ from utils.db_manager import get_db_connection, execute_api_query
 
 router = APIRouter()
 
-@router.get("/{table_name}", tags=["Generic Data Management"])
+@router.get("/{table_name}", tags=["Resource List Retrieval"])
 async def get_resource_list(
     table_name: str = Path(..., description="Nome do recurso (tabela ou view) para consulta"),
     db_conn: MySQLConnection = Depends(get_db_connection)
@@ -43,7 +43,7 @@ async def get_resource_list(
         raise HTTPException(status_code=500, detail=f"Erro interno ao buscar lista de '{table_name}': {e}")
 
 
-@router.get("/{table_name}/{item_id}", tags=["Generic Data Management"])
+@router.get("/{table_name}/{item_id}", tags=["Resource List Retrieval"])
 async def get_single_item(
     table_name: str = Path(..., description="Nome do recurso (APENAS tabelas de dimensão simples)"),
     item_id: int = Path(..., description="ID do item a ser buscado (ex: hero_id, map_id)"),
