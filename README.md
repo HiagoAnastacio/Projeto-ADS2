@@ -260,7 +260,7 @@ Distribuído sob a Licença MIT. Veja `LICENSE` para mais informações.
 
 ### 📫 Contato
 
-Hiago Oliveira Anastácio - hiagooliveira711@gmail.com
+Hiago Anastacio - hiagoanastacios@gmail.com
 
 Link do Projeto: [https://github.com/HiagoAnastacio/Projeto-ADS2](https://github.com/HiagoAnastacio/Projeto-ADS2)
 
