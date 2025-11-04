@@ -1,113 +1,103 @@
 # =======================================================================================
-# SERVIÇO DE AGENDAMENTO DE TAREFAS (DATA UPLOADER) (REFATORADO v3)
+# SERVIÇO DE AGENDAMENTO DE TAREFAS (DATA UPLOADER) (v0.7.0 - Refatorado SoC)
 # =======================================================================================
-# ARQUITETURA (Mudança v3):
-# 1. Adiciona flag `pipeline_successful` para rastrear falhas críticas.
-# 2. Modifica a mensagem final de log para indicar sucesso explícito se nenhuma
-#    falha crítica ocorreu.
-# 3. Mantém a criação do objeto SimpleNamespace para `main_populate_facts`.
+# ARQUITETURA:
+# 1. Este é o Orquestrador de Nível 1 ("Maestro").
+# 2. Sua única responsabilidade é agendar e executar o pipeline principal.
+# 3. A função `run_update_pipeline` chama os Orquestradores de Nível 2
+#    (das novas pastas `services/orchestrators/`) na ordem correta.
 # =======================================================================================
 
 import logging
 import asyncio
 from contextlib import asynccontextmanager
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.job import Job # Importa Job para type hinting
+from apscheduler.job import Job
 from types import SimpleNamespace
 
-from services.scripts.populate_scrape_map_lvl2 import main_scrape_and_populate_maps
-from services.scripts.populate_hero_lvl2 import main_populate_heroes
-from services.scripts.populate_lvl3 import main_populate_facts
+# --- Importa as funções principais dos scripts ORQUESTRADORES ---
+# (Importa dos novos locais)
+from services.orchestrators.run_dims_lvl2_pipeline import run_map_pipeline, run_hero_pipeline
+from services.orchestrators.run_stats_lvl3_pipeline import run_stats_pipeline
 
 logger = logging.getLogger(__name__)
-
-# --- Variável Global para o Scheduler (para acessar jobs depois) ---
-# Precisamos dela para pegar o next_run_time no final.
 scheduler: AsyncIOScheduler | None = None
 
 async def run_update_pipeline():
     """
     Função principal do pipeline, chamada pelo agendador.
-    Executa os scripts de população em ordem, com tratamento de erro granular.
+    Executa os scripts de população de dimensões e depois o de fatos.
     """
-    logger.info("==== INICIANDO PIPELINE DE ATUALIZAÇÃO AGENDADO ====")
-    pipeline_successful = True # Assume sucesso inicialmente
+    logger.info("==== INICIANDO PIPELINE DE ATUALIZAÇÃO AGENDADO (v0.7.0 - SoC Refactor) ====")
+    pipeline_successful = True # Assume sucesso
 
     # Etapa 1: Mapas (Scraping)
     try:
-        logger.info("--- [ETAPA 1/3] Executando 'populate_scrape_map_lvl2.py' ---")
-        main_scrape_and_populate_maps()
-        logger.info("--- [ETAPA 1/3] 'populate_scrape_map_lvl2.py' concluído (pode conter erros não fatais). ---")
+        logger.info("--- [ETAPA 1/3] Executando 'run_map_pipeline' (Dimensão Mapas) ---")
+        # Chama o orquestrador de mapas
+        run_map_pipeline()
+        logger.info("--- [ETAPA 1/3] 'run_map_pipeline' concluído. ---")
     except Exception as e:
-        logger.error(f"==== FALHA NA ETAPA 1 (scrape_maps). Erro: {e} ====", exc_info=True)
-        # Consideramos falha no scraping como não crítica para o log final, mas logamos o erro.
+        logger.error(f"==== FALHA NA ETAPA 1 (run_map_pipeline). Erro: {e} ====", exc_info=True)
+        # Pode continuar, mas loga.
 
-    # Etapa 2: Heróis (API) - Crítico
+    # Etapa 2: Heróis (API Dimensão) - Crítico
     try:
-        logger.info("--- [ETAPA 2/3] Executando 'populate_hero_lvl2.py' (heróis) ---")
-        main_populate_heroes()
-        logger.info("--- [ETAPA 2/3] 'populate_hero_lvl2.py' concluído com sucesso. ---")
+        logger.info("--- [ETAPA 2/3] Executando 'run_hero_pipeline' (Dimensão Heróis) ---")
+        # Chama o orquestrador de heróis
+        run_hero_pipeline()
+        logger.info("--- [ETAPA 2/3] 'run_hero_pipeline' concluído com sucesso. ---")
     except Exception as e:
-        logger.error(f"==== FALHA CRÍTICA NA ETAPA 2 (populate_hero). O pipeline será abortado. Erro: {e} ====", exc_info=True)
-        pipeline_successful = False # Marca como falha crítica
-        return # Interrompe o pipeline
+        logger.error(f"==== FALHA CRÍTICA NA ETAPA 2 (run_hero_pipeline). Abortando. Erro: {e} ====", exc_info=True)
+        pipeline_successful = False
+        return
 
-    # Etapa 3: Tabelas de Fato (API) - Crítico
-    if pipeline_successful: # Só executa se a etapa 2 passou
+    # Etapa 3: Tabelas de Fato (API Agregados) - Crítico
+    if pipeline_successful:
         try:
-            logger.info("--- [ETAPA 3/3] Executando 'populate_lvl3.py' para tabelas de fato ---")
-            default_args = SimpleNamespace(limit=0)
-            main_populate_facts(default_args)
-            logger.info("--- [ETAPA 3/3] 'populate_lvl3.py' concluído com sucesso. ---")
+            logger.info("--- [ETAPA 3/3] Executando 'run_stats_pipeline' (Fatos) ---")
+            # Simula args para compatibilidade com o __main__ do script
+            default_args = SimpleNamespace(limit=0) 
+            # Chama o orquestrador de fatos
+            run_stats_pipeline(default_args)
+            logger.info("--- [ETAPA 3/3] 'run_stats_pipeline' concluído com sucesso. ---")
         except Exception as e:
-            logger.error(f"==== FALHA CRÍTICA NA ETAPA 3 (populate_facts). Erro: {e} ====", exc_info=True)
-            pipeline_successful = False # Marca como falha crítica
+            logger.error(f"==== FALHA CRÍTICA NA ETAPA 3 (run_stats_pipeline). Erro: {e} ====", exc_info=True)
+            pipeline_successful = False
 
-    # --- LOG FINAL MELHORADO ---
+    # --- LOG FINAL ---
     if pipeline_successful:
         logger.info("✅ ==== PIPELINE DE ATUALIZAÇÃO AGENDADO CONCLUÍDO COM SUCESSO ==== ✅")
     else:
          logger.warning("❌ ==== PIPELINE DE ATUALIZAÇÃO AGENDADO CONCLUÍDO COM FALHAS CRÍTICAS ==== ❌")
 
-    # O log do APScheduler que vem logo após esta função já informa o next run time.
-    # Ex: INFO - Job "run_update_pipeline (...) next run at: 2025-11-03 12:26:00 -03)" executed successfully
-
-
+# --- Gerenciador de Ciclo de Vida (Lifespan) ---
 @asynccontextmanager
 async def scheduler_lifespan(app):
-    """
-    Context manager para o ciclo de vida do FastAPI. Inicia o scheduler.
-    """
-    global scheduler # Permite modificar a variável global
+    """Inicia e encerra o scheduler APScheduler."""
+    global scheduler
     logger.info("Iniciando o serviço de agendamento em segundo plano...")
-    # Cria a instância do agendador.
     scheduler = AsyncIOScheduler(timezone="America/Sao_Paulo")
 
-    # Adiciona a tarefa ao agendador com um ID fixo para referência futura
     scheduler.add_job(
-        run_update_pipeline,
-        'cron',
-        day_of_week='mon',
-        hour=4, # Ajuste a hora/minuto conforme necessário
-        minute=30,
-        id="weekly_data_pipeline" # ID do Job
+        run_update_pipeline, 'cron', day_of_week='mon', hour=2, minute=20, id="weekly_data_pipeline"
     )
-
     # Para testes: Rodar imediatamente (descomente se necessário)
     # scheduler.add_job(run_update_pipeline, id="immediate_run")
 
     scheduler.start()
-    current_job: Job | None = scheduler.get_job("weekly_data_pipeline")
-    if current_job and current_job.next_run_time:
-        logger.info(f"Próxima execução do pipeline agendada para: {current_job.next_run_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
-    else:
-        logger.warning("Não foi possível determinar a próxima execução agendada do pipeline.")
-
+    try:
+        current_job: Job | None = scheduler.get_job("weekly_data_pipeline")
+        if current_job and current_job.next_run_time:
+            logger.info(f"Próxima execução do pipeline agendada para: {current_job.next_run_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+        else:
+            logger.info("Execução imediata do pipeline configurada (se descomentada).")
+    except Exception as e:
+         logger.error(f"Erro ao obter informações do job agendado: {e}")
 
     try:
-        yield
+        yield # FastAPI inicia
     finally:
-        # Este bloco é executado quando o servidor FastAPI é encerrado.
         logger.info("Encerrando o serviço de agendamento...")
-        if scheduler:
+        if scheduler and scheduler.running:
             scheduler.shutdown()

@@ -1,56 +1,79 @@
 # =======================================================================================
-# MÓDULO RESOLVEDOR DE MODELOS
+# MÓDULO RESOLVEDOR DE MODELOS (v0.5.0)
 # =======================================================================================
-# FLUXO E A LÓGICA:
-# 1. O dicionário `TABLE_MODEL_MAPPING` é criado quando a aplicação inicia, mapeando
-#    nomes de tabelas (strings) para suas classes Pydantic correspondentes.
-# 2. A função `get_model_for_table` é chamada pela dependência `validate_body` durante
-#    uma requisição. Ela recebe o nome da tabela da URL.
-# 3. A função busca a classe Pydantic no dicionário e a retorna.
-# 4. Se a tabela não estiver mapeada, um erro é levantado, resultando em um HTTP 400.
-#
-# RAZÃO DE EXISTIR: É o "tradutor" que conecta o mundo das URLs (strings) ao mundo
-# da validação de dados (classes Pydantic). É a peça-chave que permite que nossas
-# rotas CRUD sejam genéricas e dinâmicas.
+# Mapeia nomes de tabelas/views (strings) para suas classes Pydantic correspondentes,
+# permitindo que as rotas genéricas e a validação funcionem com a nova estrutura.
 # =======================================================================================
 
 from typing import Type
 from pydantic import BaseModel
-# Importa todas as classes de schema Pydantic que serão mapeadas.
+# Importa todos os modelos Pydantic definidos em models.py
 from model.models import (
-    HeroBase, MapBase, RoleBase, RankBase, GameModeBase, 
-    HeroMapPickData, HeroMapWinData,  HeroPickData, HeroWinData, HeroRankPickData, HeroRankWinData,
-    HeroWinData, HeroPickData, HeroRankMapWinData, HeroRankMapPickData
+    # Dimensões (usar modelos Base para validação de escrita)
+    HeroBase, MapBase, RoleBase, RankBase, GameModeBase,
+    # Dimensões (usar modelos completos para leitura, se necessário mapear)
+    # Hero, Map, Role, Rank, GameMode,
+
+    # Novas Tabelas de Fato
+    HeroWinData, HeroPickData,
+    HeroRankWinData, HeroRankPickData,
+    HeroMapWinData, HeroMapPickData,
+    HeroGameModeWinData, HeroGameModePickData,
+    HeroRankMapWinData, HeroRankMapPickData,
+    # Novas Views _latest
+    VWHeroWinLatest, VWHeroPickLatest,
+    VWHeroRankWinLatest, VWHeroRankPickLatest,
+    VWHeroMapWinLatest, VWHeroMapPickLatest,
+    VWHeroGameModeWinLatest, VWHeroGameModePickLatest,
+    VWHeroRankMapWinLatest, VWHeroRankMapPickLatest
 )
 
-# Variável 'TABLE_MODEL_MAPPING' (Escopo Global/Módulo): O dicionário de mapeamento.
-# Chave: nome da tabela (string). Valor: Classe Pydantic correspondente.
+# Mapeamento: Chave (nome da tabela/view string) -> Valor (Classe Pydantic)
+# Usamos os modelos 'Base' para tabelas editáveis (para validação de POST/PUT)
+# Usamos os modelos completos de dados/views para tabelas/views read-only
 TABLE_MODEL_MAPPING: dict[str, Type[BaseModel]] = {
+    # Tabelas de Dimensão (Editáveis - usar Base para validação de escrita)
     "hero": HeroBase,
     "map": MapBase,
     "role": RoleBase,
     "rank": RankBase,
     "game_mode": GameModeBase,
+
+    # Novas Tabelas de Fato (Read-Only - mapear para modelos de dados completos)
     "hero_win": HeroWinData,
     "hero_pick": HeroPickData,
-    "hero_map_win": HeroMapWinData,
-    "hero_map_pick": HeroMapPickData,
     "hero_rank_win": HeroRankWinData,
     "hero_rank_pick": HeroRankPickData,
-    "hero_rank_map_win": HeroRankMapWinData,
-    "hero_rank_map_pick": HeroRankMapPickData,
+    "hero_map_win": HeroMapWinData,
+    "hero_map_pick": HeroMapPickData,
+    "hero_game_mode_win": HeroGameModeWinData,
+    "hero_game_mode_pick": HeroGameModePickData,
+    "hero_rank_map_win": HeroRankMapWinData, # Granular mantida
+    "hero_rank_map_pick": HeroRankMapPickData, # Granular mantida
+
+    # Novas Views _latest (Read-Only)
+    "vw_hero_win_latest": VWHeroWinLatest,
+    "vw_hero_pick_latest": VWHeroPickLatest,
+    "vw_hero_rank_win_latest": VWHeroRankWinLatest,
+    "vw_hero_rank_pick_latest": VWHeroRankPickLatest,
+    "vw_hero_map_win_latest": VWHeroMapWinLatest,
+    "vw_hero_map_pick_latest": VWHeroMapPickLatest,
+    "vw_hero_game_mode_win_latest": VWHeroGameModeWinLatest,
+    "vw_hero_game_mode_pick_latest": VWHeroGameModePickLatest,
+    "vw_hero_rank_map_win_latest": VWHeroRankMapWinLatest, # Granular mantida
+    "vw_hero_rank_map_pick_latest": VWHeroRankMapPickLatest # Granular mantida
 }
 
 def get_model_for_table(table_name: str) -> Type[BaseModel]:
     """
-    Retorna a classe do modelo Pydantic correspondente a uma tabela.
+    Retorna a classe do modelo Pydantic correspondente a uma tabela ou view.
+    Levanta ValueError se o nome não for encontrado no mapeamento.
     """
-    # Variável 'model' (Escopo de Requisição): Tenta buscar o modelo no dicionário.
-    model = TABLE_MODEL_MAPPING.get(table_name.lower())
-    
-    # Se o nome da tabela não estiver no mapeamento, levanta um erro.
-    if not model:
-        raise ValueError(f"A tabela '{table_name}' não é válida ou não está mapeada para esta operação.")
-        
-    # Retorna a CLASSE Pydantic para a dependência `validate_body`.
+    model = TABLE_MODEL_MAPPING.get(table_name)
+    if model is None:
+        raise ValueError(f"Modelo Pydantic não definido para a tabela/view: '{table_name}'")
     return model
+
+# Nota: A função `create_example_json` (usada em `route_schema_models.py`)
+# pode precisar de ajustes se os modelos Base não tiverem todos os campos
+# esperados para um exemplo completo, mas deve funcionar razoavelmente bem.

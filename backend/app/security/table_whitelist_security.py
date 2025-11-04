@@ -1,49 +1,58 @@
 # =======================================================================================
-# MÓDULO DE CONFIGURAÇÃO CENTRAL DE PERMISSÕES
+# MÓDULO DE CONFIGURAÇÃO CENTRAL DE PERMISSÕES (v0.5.0)
 # =======================================================================================
 # FLUXO E A LÓGICA:
-# 1. Este arquivo define quais tabelas podem ser acessadas pela API e com qual nível
-#    de permissão (apenas leitura ou escrita completa).
-# 2. As listas aqui definidas são importadas pelos módulos de rotas (CRUD) para
-#    validar se uma operação solicitada em uma tabela é permitida.
-#
-# RAZÃO DE EXISTIR: Centralizar a gestão de segurança de acesso às tabelas em um
-# único local. Isso evita a duplicação de whitelists, reduz o risco de erros e
-# facilita a manutenção ao adicionar ou remover tabelas da API. É a nossa "fonte
-# única da verdade" para permissões de CRUD.
+# 1. Define quais tabelas/views podem ser lidas e quais podem ser escritas pela API.
+# 2. As listas são importadas pelas rotas e dependências para validação.
+# RAZÃO DE EXISTIR: Centralizar a gestão de segurança de acesso aos dados.
 # =======================================================================================
 
 # --- NÍVEIS DE PERMISSÃO ---
 
-# Tabelas que a API pode ler, mas NUNCA modificar (criar, atualizar ou deletar).
-# Inclui tabelas de fatos e views que são populadas exclusivamente pelo pipeline de ETL.
+# Tabelas/Views que a API pode LER, mas NÃO modificar.
+# Inclui as novas tabelas de fato (que são populadas pelo ETL)
+# e as novas views _latest.
 READ_ONLY_TABLES = [
-    "vw_hero_win",
-    "vw_hero_pick",
-    "vw_hero_map_win",
-    "vw_hero_map_pick",
-    "vw_hero_rank_win",
-    "vw_hero_rank_pick",
-    "hero_rank_map_win",
-    "hero_rank_map_pick"
+    # Novas Tabelas de Fato (Agregadas/Históricas)
+    "hero_win",
+    "hero_pick",
+    "hero_rank_win",
+    "hero_rank_pick",
+    "hero_map_win",
+    "hero_map_pick",
+    "hero_game_mode_win",
+    "hero_game_mode_pick",
+    "hero_rank_map_win", # Tabela granular mantida
+    "hero_rank_map_pick", # Tabela granular mantida
+
+    # Novas Views _latest
+    "vw_hero_win_latest",
+    "vw_hero_pick_latest",
+    "vw_hero_rank_win_latest",
+    "vw_hero_rank_pick_latest",
+    "vw_hero_map_win_latest",
+    "vw_hero_map_pick_latest",
+    "vw_hero_game_mode_win_latest",
+    "vw_hero_game_mode_pick_latest",
+    "vw_hero_rank_map_win_latest", # View _latest para a granular mantida
+    "vw_hero_rank_map_pick_latest" # View _latest para a granular mantida
 ]
 
-# Tabelas que a API pode ler E TAMBÉM modificar (criar, atualizar, deletar).
-# Geralmente são as tabelas de dimensão que podem necessitar de correção manual.
+# Tabelas que a API pode LER E TAMBÉM modificar (criar, atualizar, deletar).
+# Apenas as tabelas de dimensão.
 EDITABLE_TABLES = [
     "hero",
     "map",
     "role",
     "rank",
     "game_mode"
+    # Note: As tabelas de fato NÃO estão aqui, garantindo que só o ETL as popule.
 ]
 
 # --- LISTAS CONSOLIDADAS PARA AS ROTAS ---
 
-# Lista completa de tabelas que podem ser lidas pela API (GET).
-# Usada por: route_get.py, route_schema_models.py
+# Lista completa de tabelas/views que podem ser lidas via GET (genérico ou por ID, se aplicável).
 ALLOWED_GET_TABLES = READ_ONLY_TABLES + EDITABLE_TABLES
 
-# Lista completa de tabelas que podem ser modificadas pela API (POST, PUT, DELETE).
-# Usada por: route_post.py, route_update.py, route_delete.py
+# Lista de tabelas que permitem operações de escrita (POST, PUT, DELETE).
 ALLOWED_WRITE_TABLES = EDITABLE_TABLES

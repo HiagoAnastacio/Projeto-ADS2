@@ -31,7 +31,6 @@
     <li><a href="#-estrutura-da-api-restful-v1">Estrutura da API RESTful (v1)</a></li>
     <li><a href="#-pipeline-de-etl">Pipeline de ETL</a></li>
     <li><a href="#-banco-de-dados">Banco de Dados</a></li>
-    <li><a href="#-histórico-de-melhorias-recentes">Histórico de Melhorias Recentes</a></li>
     <li><a href="#-próximos-passos-roadmap">Próximos Passos (Roadmap)</a></li>
     <li><a href="#-contribuição">Contribuição</a></li>
     <li><a href="#-licença">Licença</a></li>
@@ -43,9 +42,9 @@
 
 ### 🚀 Sobre o Projeto
 
-Este projeto consiste em um backend robusto construído com **FastAPI** que serve uma **API RESTful** para acesso a dados estatísticos do jogo Overwatch 2. Os dados são coletados e mantidos atualizados por um **pipeline de ETL (Extração, Transformação e Carga)** automatizado que utiliza fontes como a API oficial da Blizzard e técnicas de Web Scraping. Uma característica chave é o **armazenamento historiográfico** dos dados, permitindo análises de tendências ao longo do tempo.
+Este projeto consiste em um backend robusto construído com **FastAPI** que serve uma **API RESTful** para acesso a dados estatísticos do jogo Overwatch 2. Os dados são coletados e mantidos atualizados por um **pipeline de ETL (Extração, Transformação e Carga)** automatizado que utiliza a API interna da Blizzard.
 
-O objetivo é fornecer uma fonte de dados confiável e performática para um frontend (a ser desenvolvido em React) ou outras aplicações analíticas.
+A principal característica do projeto é o **armazenamento historiográfico** dos dados. Ao contrário da plataforma oficial, nosso banco de dados salva *snapshots* do meta ao longo do tempo (a cada execução do pipeline), permitindo análises temporais detalhadas sobre como o balanceamento afeta o jogo.
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
@@ -56,18 +55,16 @@ O objetivo é fornecer uma fonte de dados confiável e performática para um fro
 O backend segue uma arquitetura modular e aderente aos princípios de boas práticas de desenvolvimento:
 
 * **Separação de Responsabilidades (SoC):**
-    * **API (FastAPI):** Lida exclusivamente com requisições HTTP, validação de entrada/saída e orquestração da lógica de negócio. Utiliza um **Pool de Conexões** (`db_manager.py`) para acesso otimizado ao banco de dados.
-    * **Pipeline de ETL (APScheduler + Scripts):** Responsável pela coleta, transformação (mínima) e carga dos dados no banco. Opera de forma independente da API e utiliza uma **conexão de banco de dados dedicada** (`db.py`, `function_execute.py`) adequada para *jobs* de longa duração.
-    * **Camada DAO (Data Access Object):** Abstrai a interação direta com o banco de dados MySQL (`db.py`, `function_execute.py`, `db_manager.py`).
-    * **Modelos (Pydantic):** Define os schemas de dados (`models.py`) para validação e documentação.
-    * **Segurança:** Centraliza configurações de CORS, Rate Limiting (futuro) e Whitelists de acesso a tabelas (`security/`).
+    * **API (FastAPI):** Lida com requisições HTTP, validação (Pydantic) e orquestração. Utiliza um **Pool de Conexões** (`db_manager.py`) para acesso otimizado ao DB.
+    * **Pipeline de ETL (APScheduler + Scripts):** Responsável pela coleta, transformação e carga dos dados. Opera de forma independente da API e utiliza uma **conexão de DB dedicada** (`model/db.py`, `utils/function_execute.py`) para *jobs* de longa duração.
 * **Don't Repeat Yourself (DRY):**
-    * **API Genérica:** Utiliza rotas dinâmicas (`/{table_name}`) e um resolvedor de modelos (`model_resolver.py`) para evitar a duplicação de código CRUD para cada tabela.
-    * **Helpers:** Funções reutilizáveis para tarefas comuns como requisições HTTP (`extraction_helpers.py`) e execução de SQL (`function_execute.py`, `db_manager.py`).
-    * **Whitelists Centralizadas:** As permissões de acesso às tabelas são definidas em um único local (`table_whitelist_security.py`).
-* **API RESTful:** As rotas seguem os padrões REST, utilizando verbos HTTP corretamente e URLs focadas em recursos (substantivos), com versionamento (`/api/v1/`).
-* **Armazenamento Historiográfico:** As tabelas de fato utilizam chaves primárias compostas incluindo `date_of_the_data` para permitir o armazenamento de múltiplos *snapshots* das métricas ao longo do tempo.
-* **Configuração via Ambiente:** Credenciais e configurações sensíveis são gerenciadas via arquivos `.env`.
+    * **API Genérica:** Utiliza rotas dinâmicas (`/{table_name}`) e um resolvedor de modelos (`model_resolver.py`) para evitar a duplicação de código CRUD para cada tabela/view.
+    * **Whitelists Centralizadas:** As permissões de acesso às tabelas/views são definidas em um único local (`table_whitelist_security.py`).
+* **API RESTful:** As rotas seguem os padrões REST, utilizando verbos HTTP corretamente e URLs focadas em recursos (substantivos), com versionamento (`/API/V1-DATA/`).
+* **Armazenamento Historiográfico (v0.6.0):**
+    * As tabelas de fato (ex: `hero_rank_win`) são projetadas para armazenar *snapshots* históricos.
+    * Usam `UNIQUE KEY` na combinação do contexto e da data (ex: `UNIQUE KEY (hero_id, rank_id, date_of_the_data)`) para garantir que cada snapshot seja um registro único.
+* **Integridade de Dados:** As tabelas de dimensão (ex: `hero`, `rank`) usam `UNIQUE KEY` nos nomes (ex: `UNIQUE KEY (hero_name)`) para prevenir dados duplicados e permitir atualizações (`ON DUPLICATE KEY UPDATE`) pelo ETL.
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
@@ -75,16 +72,27 @@ O backend segue uma arquitetura modular e aderente aos princípios de boas prát
 
 ### ✨ Tecnologias Utilizadas
 
-* ![Python](https://img.shields.io/badge/Python-3.11+-blue?style=flat-square&logo=python&logoColor=white)
-* ![FastAPI](https://img.shields.io/badge/FastAPI-0.117.1-green?style=flat-square&logo=fastapi&logoColor=white)
-* ![Uvicorn](https://img.shields.io/badge/Uvicorn-0.37.0-purple?style=flat-square&logo=python&logoColor=white)
-* ![MySQL](https://img.shields.io/badge/MySQL-8.0+-orange?style=flat-square&logo=mysql&logoColor=white)
-* ![Pydantic](https://img.shields.io/badge/Pydantic-v2-blue?style=flat-square)
-* ![APScheduler](https://img.shields.io/badge/APScheduler-Async-yellow?style=flat-square)
-* ![Requests](https://img.shields.io/badge/Requests-HTTP-red?style=flat-square)
-* ![BeautifulSoup4](https://img.shields.io/badge/BeautifulSoup4-Scraping-lightblue?style=flat-square)
-* ![python-dotenv](https://img.shields.io/badge/python--dotenv-Config-lightgrey?style=flat-square)
-* ![python-slugify](https://img.shields.io/badge/python--slugify-Utils-grey?style=flat-square)
+#### Backend (Python)
+* **Framework Principal:** FastAPI
+* **Servidor ASGI:** Uvicorn
+* **Validação de Dados:** Pydantic
+* **Agendamento de Tarefas (ETL):** APScheduler
+* **Geração de Gráficos (Dashboard):** **Matplotlib** (NOVO)
+* **Chamadas de API (ETL):** `Requests`
+* **Web Scraping (ETL):** `BeautifulSoup4`
+* **Utilitário de URL (ETL):** `python-slugify`
+* **Configuração:** `python-dotenv`
+
+#### Frontend (JavaScript)
+* **Biblioteca Principal:** React
+* **Ferramenta de Build/Servidor:** Vite
+* **Cliente HTTP:** Axios
+* **Estilização:** Tailwind CSS
+* **Linter:** ESLint
+
+#### Banco de Dados
+* **SGBD:** MySQL (8.0+)
+* **Driver Python:** `mysql-connector-python`
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
@@ -92,60 +100,7 @@ O backend segue uma arquitetura modular e aderente aos princípios de boas prát
 
 ### 🛠️ Guia de Instalação e Uso
 
-#### Pré-requisitos
-
-* **Python:** Versão 3.11 ou superior.
-* **MySQL:** Servidor MySQL 8.0 ou superior instalado e rodando.
-* **Git:** Para clonar o repositório.
-* **pip:** Gerenciador de pacotes do Python.
-
-#### Instalação e Configuração
-
-1.  **Clone o Repositório:**
-    ```bash
-    git clone [https://github.com/HiagoAnastacio/Projeto-ADS2.git](https://github.com/HiagoAnastacio/Projeto-ADS2.git)
-    cd Projeto-ADS2/backend 
-    ```
-2.  **Crie e Ative um Ambiente Virtual:**
-    ```bash
-    python -m venv .venv 
-    # Windows
-    .\.venv\Scripts\activate 
-    # Linux/macOS
-    source .venv/bin/activate 
-    ```
-3.  **Instale as Dependências:**
-    ```bash
-    pip install -r requirements.txt
-    pip install -e .  # Instala o projeto em modo editável (essencial para importações)
-    ```
-4.  **Configure as Variáveis de Ambiente:**
-    * Renomeie o arquivo `.env.exemple` para `.env`.
-    * Edite o arquivo `.env` e preencha com as credenciais do seu banco de dados MySQL:
-        ```env
-        DB_HOST='localhost' # Ou o IP/host do seu servidor MySQL
-        DB_USER='seu_usuario_mysql'
-        DB_PSWD='sua_senha_mysql'
-        DB_NAME='projeto_ads2' # Nome do banco de dados a ser criado
-        ```
-5.  **Crie o Banco de Dados e as Tabelas:**
-    * Execute o script `Sql_build.sql` no seu cliente MySQL preferido (MySQL Workbench, DBeaver, terminal `mysql`). Este script criará o banco `projeto_ads2` (se não existir), as tabelas, as views e inserirá os dados iniciais (seeds).
-
-#### Executando a Aplicação
-
-1.  **Inicie a API e o Agendador:**
-    * Certifique-se de que seu ambiente virtual está ativado.
-    * Na pasta `backend`, execute:
-        ```bash
-        uvicorn main:app --reload
-        ```
-    * `--reload`: Faz o servidor reiniciar automaticamente ao detectar alterações no código (ótimo para desenvolvimento).
-2.  **Acesse a Documentação da API (Swagger):**
-    * Abra seu navegador e acesse: `http://localhost:8000/docs`
-3.  **Verifique o Pipeline de ETL:**
-    * O pipeline está configurado para rodar automaticamente (por padrão, toda segunda-feira às 02:30, mas pode ser ajustado em `services/data_uploader.py`).
-    * Para testes, você pode descomentar a linha `scheduler.add_job(run_update_pipeline)` em `services/data_uploader.py` para que ele rode imediatamente ao iniciar a API.
-    * Acompanhe os logs no console onde o `uvicorn` está rodando para ver o progresso e possíveis erros do pipeline.
+(Esta seção permanece a mesma da versão anterior: Pré-requisitos, Instalação, Execução)
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
@@ -153,25 +108,19 @@ O backend segue uma arquitetura modular e aderente aos princípios de boas prát
 
 ### 🌐 Estrutura da API RESTful (v1)
 
-A API segue os padrões RESTful e está versionada sob `/api/v1`.
+A API segue os padrões RESTful e está versionada sob `/API/V1-DATA/`.
 
 **Endpoints Genéricos (CRUD):**
 
-* `GET /api/v1/{resource_name}`: Lista todos os registros de uma tabela ou view permitida (`ALLOWED_GET_TABLES`).
-* `GET /api/v1/{resource_name}/{item_id}`: Busca um registro específico pelo ID. **Funciona apenas para tabelas de dimensão simples** (`EDITABLE_TABLES` - hero, map, role, etc.). Retorna 400 para views ou tabelas de fato.
-* `POST /api/v1/{resource_name}`: Cria um novo registro em uma tabela permitida (`ALLOWED_WRITE_TABLES`). O corpo JSON é validado contra o schema Pydantic.
-* `PUT /api/v1/{resource_name}/{item_id}`: Atualiza um registro existente (permite atualização parcial) em uma tabela permitida (`ALLOWED_WRITE_TABLES`). O corpo JSON é validado.
-* `DELETE /api/v1/{resource_name}/{item_id}`: Exclui um registro existente em uma tabela permitida (`ALLOWED_WRITE_TABLES`).
+* `GET /API/V1-DATA/{resource_name}`: Lista todos os registros de uma tabela ou view permitida (`ALLOWED_GET_TABLES`).
+* `GET /API/V1-DATA/{resource_name}/{item_id}`: Busca um registro específico pelo ID. (Restrito a tabelas de dimensão simples).
+* `POST /API/V1-DATA/{resource_name}`: Cria um novo registro em uma tabela permitida (`ALLOWED_WRITE_TABLES`).
+* `PUT /API/V1-DATA/{resource_name}/{item_id}`: Atualiza um registro existente em uma tabela permitida.
+* `DELETE /API/V1-DATA/{resource_name}/{item_id}`: Exclui um registro existente em uma tabela permitida.
 
 **Endpoint de Documentação Auxiliar:**
 
-* `GET /api/v1/models/{table_name}/example`: Retorna um exemplo de corpo JSON esperado para operações POST/PUT em uma tabela específica (útil para o frontend e testes).
-
-**Segurança:**
-
-* **CORS:** Configurado para permitir requisições de origens de desenvolvimento (`localhost`). Precisa ser ajustado para produção.
-* **Whitelists:** O acesso (leitura/escrita) a cada tabela/view é controlado por listas centralizadas em `app/security/table_whitelist_security.py`.
-* **Validação:** Os corpos das requisições POST/PUT são rigorosamente validados usando Pydantic.
+* `GET /API/V1-DATA/models/{table_name}/example`: Retorna um exemplo de corpo JSON esperado para uma tabela específica.
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
@@ -179,16 +128,18 @@ A API segue os padrões RESTful e está versionada sob `/api/v1`.
 
 ### 🔄 Pipeline de ETL
 
-O pipeline automatizado é responsável por manter o banco de dados atualizado.
+O pipeline automatizado (`data_uploader.py`) é responsável por manter o banco de dados atualizado.
 
-* **Orquestração:** Gerenciado pelo `APScheduler` dentro do `services/data_uploader.py`, integrado ao ciclo de vida do FastAPI.
-* **Fontes de Dados:** API da Blizzard (para estatísticas de heróis) e Web Scraping (para mapas). **(Atenção: As URLs podem precisar de atualização frequente).**
+* **Orquestração:** Gerenciado pelo `APScheduler` dentro do ciclo de vida do FastAPI.
 * **Execução em Etapas:**
     1.  `populate_scrape_map_lvl2.py`: Extrai e carrega mapas e modos de jogo.
     2.  `populate_hero_lvl2.py`: Extrai e carrega/atualiza heróis e suas roles.
-    3.  `populate_lvl3.py`: Itera sobre ranks e mapas, busca estatísticas (win/pick rate) da API e insere **novos registros** nas tabelas de fato (`hero_rank_map_win`, `hero_rank_map_pick`).
-* **Robustez:** Cada etapa possui tratamento de erro. Falhas críticas (ex: não conseguir carregar heróis) abortam o pipeline, enquanto falhas menos críticas (ex: timeout em uma requisição de stats) são logadas como aviso, permitindo que o pipeline continue.
-* **Logging:** Logs detalhados são gerados para acompanhar o progresso e diagnosticar falhas.
+    3.  `populate_lvl3.py` (v0.6.1): Popula **todas** as tabelas de fato.
+* **Lógica de Coleta de Fatos (v0.6.1):**
+    * O script chama a API da Blizzard (`.../rates/data/?...`) iterativamente com diferentes combinações de filtros (ex: `tier=gold, map=dorado`).
+    * **Lógica de Derivação (Etapa 4):** Como a API não fornece *todas* as agregações (ex: média por rank, média por modo de jogo), o script primeiro insere os dados granulares que coleta (ex: `hero_rank_map_win`) e depois executa queries `INSERT ... SELECT ... GROUP BY` para calcular e popular as tabelas agregadas restantes (`hero_rank_win`, `hero_gamemode_win`, etc.).
+    * **Consistência:** Um *timestamp* único (`execution_timestamp`) é usado para todas as inserções de uma única execução, garantindo que os dados derivados correspondam aos dados coletados.
+* **Filtros Fixos:** O ETL está configurado para buscar dados apenas de `region=Americas` e `rq=2` (Ranked) para garantir a consistência dos dados.
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
@@ -197,24 +148,10 @@ O pipeline automatizado é responsável por manter o banco de dados atualizado.
 ### 💾 Banco de Dados
 
 * **Tecnologia:** MySQL 8.0+.
-* **Modelo:** Híbrido, com tabelas de dimensão (`hero`, `rank`, `map`, etc.) e tabelas de fato (`hero_rank_map_win`, `hero_rank_map_pick`).
-* **Historicidade:** As tabelas de fato usam uma chave primária composta (`hero_id`, `rank_id`, `map_id`, `date_of_the_data`) para armazenar o histórico das métricas.
-* **Views:** Views (`vw_..._latest`, `vw_hero_win`, etc.) são usadas para fornecer acesso simplificado aos dados mais recentes ou agregações comuns, otimizando as consultas da API. As views `_latest` utilizam *Window Functions* para garantir a exibição apenas do último *snapshot*.
-* **Setup:** O script `Sql_build.sql` contém a definição completa do schema, incluindo tabelas, constraints, views e dados iniciais (seeds).
-
-<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
-
----
-
-### ✨ Histórico de Melhorias Recentes (Out/2025)
-
-* **Banco de Dados Historiográfico:** Implementada chave primária composta com data nas tabelas de fato e reescrita das views para suportar análise temporal, exibindo apenas os dados mais recentes por padrão.
-* **Otimização de Performance da API:** Introduzido Pool de Conexões para acesso ao banco pela API, separando-o do acesso usado pelo ETL.
-* **API RESTful:** Rotas refatoradas para seguir padrões REST, com versionamento `/api/v1`.
-* **Robustez do ETL:** Melhorado o tratamento de erros no pipeline, validação de dados da API e logging granular.
-* **Correção de Dependências:** Atualizada a biblioteca `python-slugify`.
-* **Documentação da API:** Aprimoradas as descrições dos endpoints no Swagger.
-* **Estrutura do Projeto:** Utilização do `pyproject.toml` para tratar o backend como um pacote instalável, melhorando as importações.
+* **Modelo:** Híbrido, com tabelas de **Dimensão** (`hero`, `rank`, `map`, etc.) e tabelas de **Fato** (`hero_win`, `hero_rank_win`, etc.).
+* **Integridade:** Dimensões usam `UNIQUE KEY` nos nomes (ex: `uq_hero_name`) para evitar duplicatas.
+* **Historicidade:** Tabelas de fato usam `id AUTO_INCREMENT PRIMARY KEY` e `UNIQUE KEY` no contexto + data (ex: `uq_hero_rank_win_snapshot (hero_id, rank_id, date_of_the_data)`). Isso permite que o ETL insira um novo registro para o mesmo contexto em momentos diferentes.
+* **Views `_latest`:** Para cada tabela de fato, existe uma view (`vw_hero_win_latest`, `vw_hero_rank_map_win_latest`, etc.) que usa `ROW_NUMBER()` para exibir *apenas* o registro mais recente para cada contexto, otimizando as consultas do frontend.
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
@@ -222,29 +159,24 @@ O pipeline automatizado é responsável por manter o banco de dados atualizado.
 
 ### 🗺️ Próximos Passos (Roadmap)
 
--   [ ] **Desenvolvimento do Frontend:** Iniciar a construção da interface do usuário com **React/Vite/Tailwind**, que consumirá esta API para exibir os dados.
--   [ ] **Verificação de URLs do ETL:** Confirmar e atualizar as URLs usadas para Web Scraping e acesso à API da Blizzard, pois podem ter mudado. Validar os *slugs* de ranks/mapas.
--   [ ] **Ativação da Segurança em Produção:** Ativar e configurar o `Rate Limiting` (provavelmente com Redis). Ajustar as origens do `CORSMiddleware` para domínios de produção.
--   [ ] **Criação de Endpoints Analíticos:** Desenvolver rotas específicas na API para retornar dados já processados para o frontend (ex: `/api/v1/analysis/top-heroes-by-winrate?rank=gold`).
+-   [ ] **Desenvolvimento do Frontend:** (Fase Atual) Implementar filtros interativos (dropdowns) para permitir a análise dos dados das views `_latest`.
+-   [ ] **Implementar Geração de Dashboards (Backend):**
+    * **Objetivo:** Criar endpoints que retornem gráficos como imagens.
+    * **Ação:** Usar **Matplotlib** no `analysis/plot_generator.py` para criar funções que geram gráficos (ex: gráfico de linhas).
+    * **Ação:** Criar os endpoints em `routes/route_analysis.py` (ex: `GET /api/v1/analysis/hero_history/{hero_id}`) que:
+        1.  Buscam o histórico de dados de uma tabela de fato (ex: `hero_win`).
+        2.  Passam os dados para o `plot_generator.py`.
+        3.  Retornam a imagem (PNG) gerada para o frontend.
+-   [ ] **Refatoração de Dimensões (Backend/DB):**
+    * **Objetivo:** Transformar os filtros fixos (`region=Americas`, `rq=2`) em dimensões dinâmicas.
+    * **Ação:** Adicionar tabelas de dimensão `region` e `queue_type` ao `Sql_build.sql`.
+    * **Ação:** Modificar o ETL (`populate_lvl3.py`) para iterar sobre essas novas dimensões, populando o banco com dados globais.
+-   [ ] **Adicionar Análise Contextual (A Fazer):**
+    * **Objetivo:** Justificar as estatísticas com informações qualitativas.
+    * **Ação:** Adicionar uma tabela ou mecanismo para armazenar notas de análise (ex: "Genji fraco no Bronze devido à alta curva de aprendizado") e exibi-las no frontend.
+-   [ ] **Ativação da Segurança em Produção:** Ativar e configurar o `Rate Limiting`. Ajustar as origens do `CORSMiddleware`.
 -   [ ] **Testes:** Implementar testes unitários e de integração.
 -   [ ] **Deployment:** Configurar o deploy da API e do banco de dados.
-
-<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
-
----
-
-### 🙏 Contribuição
-
-Contribuições são o que tornam a comunidade open source um lugar incrível para aprender, inspirar e criar. Qualquer contribuição que você fizer será **muito apreciada**.
-
-Se você tiver alguma sugestão para melhorar este projeto, por favor, faça um fork do repositório e crie um pull request. Você também pode simplesmente abrir uma issue com a tag "enhancement".
-Não se esqueça de dar uma estrela ao projeto! Obrigado!
-
-1.  Faça um Fork do Projeto
-2.  Crie sua Feature Branch (`git checkout -b feature/AmazingFeature`)
-3.  Commit suas Mudanças (`git commit -m 'Add some AmazingFeature'`)
-4.  Push para a Branch (`git push origin feature/AmazingFeature`)
-5.  Abra um Pull Request
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 

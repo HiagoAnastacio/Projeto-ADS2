@@ -1,103 +1,151 @@
 # =======================================================================================
-# MÓDULO DE SCHEMAS DE DADOS (PYDANTIC)
+# MÓDULO DE SCHEMAS DE DADOS (PYDANTIC) (v0.5.0)
 # =======================================================================================
-# FLUXO E A LÓGICA:
-# 1. Este módulo define a "forma" dos dados que a API espera receber ou enviar.
-# 2. Cada classe (ex: `HeroBase`) representa o schema de uma tabela do banco.
-# 3. O FastAPI usa essas classes para:
-#    a. Validar automaticamente o corpo (body) das requisições POST e PUT.
-#    b. Gerar a documentação do Swagger UI, mostrando o formato JSON esperado.
-#
-# RAZÃO DE EXISTIR: Atuar como a camada de **Validação e Contrato de Dados**. Garante que
-# nenhum dado malformado ou com tipos incorretos chegue à lógica de negócio ou ao
-# banco de dados, prevenindo erros e vulnerabilidades.
+# Define a "forma" dos dados para validação da API e documentação Swagger,
+# refletindo a estrutura das tabelas do banco de dados v0.5.0.
 # =======================================================================================
 
 from pydantic import BaseModel, HttpUrl, Field
 from typing import Optional
-from datetime import date
+from datetime import datetime # Usar datetime para timestamps
 
 # ----------------------------------------------------------------------------------
-# 1. Modelos de Entidades Principais (Tabelas de Dimensão)
+# 1. Modelos de Dimensões (Geralmente usados para POST/PUT em EDITABLE_TABLES)
+#    Adicionamos campos de ID e data/timestamp opcionais para refletir a leitura (GET)
 # ----------------------------------------------------------------------------------
-
-class HeroBase(BaseModel):
-    # Schema para a tabela 'hero'.
-    # Variável `hero_name` (Escopo de Definição): Campo obrigatório do tipo string.
-    hero_name: str = Field(..., examples=["Reinhardt"], description="Nome do herói.")
-    # Variável `role_id` (Escopo de Definição): Chave estrangeira para a tabela 'role'.
-    role_id: int = Field(..., examples=[1], description="ID da role do herói.")
-    # Variável `hero_icon_img_link` (Escopo de Definição): Campo opcional que valida se o valor é uma URL.
-    hero_icon_img_link: Optional[HttpUrl] = Field(None, examples=["https://..."], description="Link para o ícone do herói.")
-    
-class MapBase(BaseModel):
-    # Schema para a tabela 'map'.
-    game_mode_id: int = Field(..., examples=[1], description="ID do modo de jogo do mapa.")
-    map_name: str = Field(..., examples=["King's Row"], description="Nome do mapa.")
 
 class RoleBase(BaseModel):
-    # Schema para a tabela 'role'. Renomeado para 'role' para consistência.
-    role: str = Field(..., examples=["Tank"], description="Nome da função (Tank, Damage, Support).")
+    role: str = Field(..., examples=["Tank"], description="Nome da função.")
+
+class Role(RoleBase): # Modelo completo para leitura
+    role_id: int
+    creation_date: datetime
 
 class RankBase(BaseModel):
-    # Schema para a tabela 'skill_rank' (anteriormente 'rank').
-    rank_name: str = Field(..., examples=["Gold"], description="Nome do nível de habilidade.")
+    rank_name: str = Field(..., examples=["Gold"], description="Nome do rank.")
+
+class Rank(RankBase):
+    rank_id: int
+    creation_date: datetime
 
 class GameModeBase(BaseModel):
-    # Schema para a tabela 'game_mode'.
-    game_mode_name: str = Field(..., examples=["Hybrid"], description="Nome do modo de jogo.")
+    game_mode_name: str = Field(..., examples=["Control"], description="Nome do modo de jogo.")
+
+class GameMode(GameModeBase):
+    game_mode_id: int
+    creation_date: datetime
+
+class HeroBase(BaseModel):
+    hero_name: str = Field(..., examples=["Reinhardt"], description="Nome do herói.")
+    role_id: int = Field(..., examples=[3], description="ID da função (FK para Role).")
+    hero_icon_img_link: Optional[HttpUrl] = Field(None, examples=["http://...png"], description="URL do ícone do herói.")
+
+class Hero(HeroBase):
+    hero_id: int
+    creation_date: datetime
+
+class MapBase(BaseModel):
+    map_name: str = Field(..., examples=["King's Row"], description="Nome do mapa.")
+    game_mode_id: int = Field(..., examples=[4], description="ID do modo de jogo (FK para GameMode).")
+
+class Map(MapBase):
+    map_id: int
+    creation_date: datetime
 
 
 # ----------------------------------------------------------------------------------
-# 2. Modelos de Estatísticas (Tabelas de Fato)
+# 2. Modelos das Novas Tabelas de Fato (Geralmente READ_ONLY_TABLES)
+#    Representam os dados lidos dessas tabelas. Incluem o ID PK e a data.
 # ----------------------------------------------------------------------------------
-# A razão de existir para estas classes é validar os dados para as tabelas de
-# junção que armazenam as estatísticas.
 
+# --- Agregação por Herói ---
 class HeroWinData(BaseModel):
-    # Define o Schema para a tabela 'hero_win' (Taxa de Vitória por Herói).
-    hero_id: int = Field(..., examples=[1], description="ID do herói (Chave Estrangeira para 'hero').") # Variável (Escopo de Definição): Tipo int, representa a FK para a tabela 'hero'.
-    win_rate: float = Field(..., examples=[50.55], description="Taxa de vitória (float).") # Variável (Escopo de Definição): Tipo float.
+    hero_win_id: int
+    hero_id: int
+    win_rate: Optional[float] = None
+    date_of_the_data: datetime # Renomeado de last_updated para consistência
 
 class HeroPickData(BaseModel):
-    # Define o Schema para a tabela 'hero_pick' (Taxa de Escolha por Herói).
-    hero_id: int = Field(..., examples=[1], description="ID do herói.") # Variável (Escopo de Definição): Tipo int, FK.
-    pick_rate: float = Field(..., examples=[10.1], description="Taxa de escolha (float).") # Variável (Escopo de Definição): Tipo float.
-    
-class HeroMapWinData(BaseModel):
-    # Define o Schema para a tabela 'hero_map_win' (Taxa de Vitória por Herói e Mapa).
-    hero_id: int = Field(..., examples=[1], description="ID do herói.") # Variável (Escopo de Definição): Tipo int, FK.
-    map_id: int = Field(..., examples=[1], description="ID do mapa.") # Variável (Escopo de Definição): Tipo int, FK.
-    win_rate: float = Field(..., examples=[55.0], description="Taxa de vitória (float).") # Variável (Escopo de Definição): Tipo float.
+    hero_pick_id: int
+    hero_id: int
+    pick_rate: Optional[float] = None
+    date_of_the_data: datetime
 
-class HeroMapPickData(BaseModel):
-    # Define o Schema para a tabela 'hero_map_pick' (Taxa de Escolha por Herói e Mapa).
-    hero_id: int = Field(..., examples=[1], description="ID do herói.") # Variável (Escopo de Definição): Tipo int, FK.
-    map_id: int = Field(..., examples=[1], description="ID do mapa.") # Variável (Escopo de Definição): Tipo int, FK.
-    pick_rate: float = Field(..., examples=[8.2], description="Taxa de escolha (float).") # Variável (Escopo de Definição): Tipo float.
-
+# --- Agregação por Herói e Rank ---
 class HeroRankWinData(BaseModel):
-    # Define o Schema para a tabela 'hero_rank_win' (Taxa de Vitória por Herói e Rank).
-    hero_id: int = Field(..., examples=[1], description="ID do herói.") # Variável (Escopo de Definição): Tipo int, FK.
-    rank_id: int = Field(..., examples=[1], description="ID do rank.") # Variável (Escopo de Definição): Tipo int, FK.
-    win_rate: float = Field(..., examples=[52.9], description="Taxa de vitória (float).") # Variável (Escopo de Definição): Tipo float.
+    hero_rank_win_id: int
+    hero_id: int
+    rank_id: int
+    win_rate: Optional[float] = None
+    date_of_the_data: datetime
 
 class HeroRankPickData(BaseModel):
-    # Define o Schema para a tabela 'hero_rank_pick' (Taxa de Escolha por Herói e Rank).
-    hero_id: int = Field(..., examples=[1], description="ID do herói.") # Variável (Escopo de Definição): Tipo int, FK.
-    rank_id: int = Field(..., examples=[1], description="ID do rank.") # Variável (Escopo de Definição): Tipo int, FK.
-    pick_rate: float = Field(..., examples=[10.1], description="Taxa de escolha (float).") # Variável (Escopo de Definição): Tipo float.
+    hero_rank_pick_id: int
+    hero_id: int
+    rank_id: int
+    pick_rate: Optional[float] = None
+    date_of_the_data: datetime
 
+# --- Agregação por Herói e Mapa ---
+class HeroMapWinData(BaseModel):
+    hero_map_win_id: int
+    hero_id: int
+    map_id: int
+    win_rate: Optional[float] = None
+    date_of_the_data: datetime
+
+class HeroMapPickData(BaseModel):
+    hero_map_pick_id: int
+    hero_id: int
+    map_id: int
+    pick_rate: Optional[float] = None
+    date_of_the_data: datetime
+
+# --- Agregação por Herói e Modo de Jogo ---
+class HeroGameModeWinData(BaseModel):
+    hero_gamemode_win_id: int
+    hero_id: int
+    game_mode_id: int
+    win_rate: Optional[float] = None
+    date_of_the_data: datetime
+
+class HeroGameModePickData(BaseModel):
+    hero_gamemode_pick_id: int
+    hero_id: int
+    game_mode_id: int
+    pick_rate: Optional[float] = None
+    date_of_the_data: datetime
+
+# --- Tabela Granular (Herói, Rank, Mapa) ---
 class HeroRankMapWinData(BaseModel):
-    # Define o Schema para a tabela 'hero_rank_map_win' (Taxa de Vitória por Herói, Rank e Mapa).
-    hero_id: int = Field(..., examples=[1], description="ID do herói.") # Variável (Escopo de Definição): Tipo int, FK.
-    rank_id: int = Field(..., examples=[1], description="ID do rank.") # Variável (Escopo de Definição): Tipo int, FK.
-    map_id: int = Field(..., examples=[1], description="ID do mapa.") # Variável (Escopo de Definição): Tipo int, FK.
-    win_rate: float = Field(..., examples=[54.3], description="Taxa de vitória (float).") # Variável (Escopo de Definição): Tipo float.
+    hero_rank_map_win_id: int
+    hero_id: int
+    rank_id: int
+    map_id: int
+    win_rate: float # Assumindo que esta sempre terá valor
+    date_of_the_data: datetime
 
 class HeroRankMapPickData(BaseModel):
-    # Define o Schema para a tabela 'hero_rank_map_pick' (Taxa de Escolha por Herói, Rank e Mapa).
-    hero_id: int = Field(..., examples=[1], description="ID do herói.") # Variável (Escopo de Definição): Tipo int, FK.
-    rank_id: int = Field(..., examples=[1], description="ID do rank.") # Variável (Escopo de Definição): Tipo int, FK.
-    map_id: int = Field(..., examples=[1], description="ID do mapa.") # Variável (Escopo de Definição): Tipo int, FK.
-    pick_rate: float = Field(..., examples=[12.5], description="Taxa de escolha (float).") # Variável (Escopo de Definição): Tipo float.
+    hero_rank_map_pick_id: int
+    hero_id: int
+    rank_id: int
+    map_id: int
+    pick_rate: float # Assumindo que esta sempre terá valor
+    date_of_the_data: datetime
+
+# ----------------------------------------------------------------------------------
+# 3. Modelos para as Views "_latest" (Geralmente READ_ONLY_TABLES)
+#    São idênticos aos modelos das tabelas de fato correspondentes, pois as views
+#    apenas selecionam as colunas dessas tabelas. O campo 'rn' (ROW_NUMBER) não é incluído.
+# ----------------------------------------------------------------------------------
+
+VWHeroWinLatest = HeroWinData
+VWHeroPickLatest = HeroPickData
+VWHeroRankWinLatest = HeroRankWinData
+VWHeroRankPickLatest = HeroRankPickData
+VWHeroMapWinLatest = HeroMapWinData
+VWHeroMapPickLatest = HeroMapPickData
+VWHeroGameModeWinLatest = HeroGameModeWinData
+VWHeroGameModePickLatest = HeroGameModePickData
+VWHeroRankMapWinLatest = HeroRankMapWinData
+VWHeroRankMapPickLatest = HeroRankMapPickData
