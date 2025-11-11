@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, Path, Depends, Body
 from typing import Dict, Any
 from mysql.connector.connection import MySQLConnection
 from utils.dependencies import validate_body
-from app.security.table_whitelist_security import ALLOWED_WRITE_TABLES
+from app.security.db_whitelist_security import ALLOWED_WRITE_TABLES
 from utils.db_manager import get_db_connection, execute_api_query
 
 router = APIRouter()

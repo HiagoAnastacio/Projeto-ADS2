@@ -7,7 +7,8 @@
 
 from typing import Type
 from pydantic import BaseModel
-# Importa todos os modelos Pydantic definidos em models.py
+# Importa todos os modelos Pydantic definidos em models.py e analytic_model.py
+from model.analytic_model import AnalysisQuery
 from model.models import (
     # Dimensões (usar modelos Base para validação de escrita)
     HeroBase, MapBase, RoleBase, RankBase, GameModeBase,
@@ -62,6 +63,9 @@ TABLE_MODEL_MAPPING: dict[str, Type[BaseModel]] = {
     "vw_hero_game_mode_pick_latest": VWHeroGameModePickLatest,
     "vw_hero_rank_map_win_latest": VWHeroRankMapWinLatest, # Granular mantida
     "vw_hero_rank_map_pick_latest": VWHeroRankMapPickLatest # Granular mantida
+
+    # Rotas Analíticas
+    ,"Analysis_Query": AnalysisQuery
 }
 
 def get_model_for_table(table_name: str) -> Type[BaseModel]:

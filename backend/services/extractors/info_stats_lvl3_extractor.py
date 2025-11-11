@@ -22,10 +22,10 @@ from utils.extraction_helpers import fetch_api_data
 logger = logging.getLogger(__name__)
 
 # --- Constantes da API de Estatísticas (Movidas de populate_lvl3.py) ---
-BASE_URL = "https://overwatch.blizzard.com/pt-br/rates/data?"
-PLATFORM = "pc"
+BASE_URL = "https://overwatch.blizzard.com/en-us/rates/data/?"
+PLATFORM = "PC"
 ROLE = "All"
-QUEUE = "2" # Ranked
+QUEUE = "1" # Ranked
 REGION = "Americas" # Filtro fixo para consistência
 TIER_ALL = "All" # Parâmetro fixo para rank "All"
 
@@ -37,8 +37,12 @@ def fetch_stats_data(rank_slug: str, map_slug: str) -> Optional[List[Any]]:
     (Lógica de construção de URL e extração movida de populate_lvl3.py v0.7.0)
     """
     # Constrói os parâmetros da API
-    params = f"platform={PLATFORM}&tier={rank_slug}&map={map_slug}&role={ROLE}&rq={QUEUE}&region={REGION}"
+    params = f"input={PLATFORM}&map={map_slug}&region={REGION}&role={ROLE}&rq={QUEUE}&tier={rank_slug}"
     api_url = f"{BASE_URL}{params}"
+
+    # Loga a URL exata que está sendo acessada.
+    logger.info(f"Acessando API: {api_url}")
+    # --- FIM DA ADIÇÃO ---
 
     # Chama o helper genérico
     raw_data = fetch_api_data(api_url)

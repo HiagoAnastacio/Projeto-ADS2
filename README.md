@@ -163,16 +163,16 @@ O pipeline automatizado (`data_uploader.py`) é responsável por manter o banco 
 -   [ ] **Implementar Geração de Dashboards (Backend):**
     * **Objetivo:** Criar endpoints que retornem gráficos como imagens.
     * **Ação:** Usar **Matplotlib** no `analysis/plot_generator.py` para criar funções que geram gráficos (ex: gráfico de linhas).
-    * **Ação:** Criar os endpoints em `routes/route_analysis.py` (ex: `GET /api/v1/analysis/hero_history/{hero_id}`) que:
+    * **Ação:** Criar os endpoints em `routes/analytic_routes/route_analysis.py` (ex: `GET /API/V1-DATA/analysis/hero_history/{hero_id}`) que:
         1.  Buscam o histórico de dados de uma tabela de fato (ex: `hero_win`).
         2.  Passam os dados para o `plot_generator.py`.
         3.  Retornam a imagem (PNG) gerada para o frontend.
 -   [ ] **Refatoração de Dimensões (Backend/DB):**
     * **Objetivo:** Transformar os filtros fixos (`region=Americas`, `rq=2`) em dimensões dinâmicas.
-    * **Ação:** Adicionar tabelas de dimensão `region` e `queue_type` ao `Sql_build.sql`.
-    * **Ação:** Modificar o ETL (`populate_lvl3.py`) para iterar sobre essas novas dimensões, populando o banco com dados globais.
+    * **Ação:** Adicionar tabelas de dimensão `region` e `queue_type` ao `data/Sql_build.sql`.
+    * **Ação:** Modificar o ETL para iterar sobre essas novas dimensões, populando o banco com dados globais.
 -   [ ] **Adicionar Análise Contextual (A Fazer):**
-    * **Objetivo:** Justificar as estatísticas com informações qualitativas.
+    * **Objetivo:** Justificar as estatísticas com informações qualitativas (conforme sua sugestão).
     * **Ação:** Adicionar uma tabela ou mecanismo para armazenar notas de análise (ex: "Genji fraco no Bronze devido à alta curva de aprendizado") e exibi-las no frontend.
 -   [ ] **Ativação da Segurança em Produção:** Ativar e configurar o `Rate Limiting`. Ajustar as origens do `CORSMiddleware`.
 -   [ ] **Testes:** Implementar testes unitários e de integração.

@@ -26,7 +26,7 @@ def fetch_hero_dimension_data() -> Optional[List[Any]]:
     (Lógica movida de populate_hero_lvl2.py)
     """
     # ATENÇÃO: Esta URL pode precisar de verificação.
-    api_url = "https://overwatch.blizzard.com/en-us/rates/data?"
+    api_url = "https://overwatch.blizzard.com/en-us/rates/data/?"
     
     logger.debug(f"Buscando dados da dimensão de heróis de: {api_url}")
     # Usa o helper genérico para simular navegador e tratar erros/timeout

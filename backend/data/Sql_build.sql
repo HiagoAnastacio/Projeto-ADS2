@@ -4,9 +4,9 @@
 -- =======================================================================================
 
 -- ETAPA 1: Reset completo do Schema
-DROP DATABASE IF EXISTS `projeto_ads2`;
-CREATE DATABASE IF NOT EXISTS `projeto_ads2` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
-USE `projeto_ads2`;
+DROP DATABASE IF EXISTS `Projeto_ADS2`;
+CREATE DATABASE IF NOT EXISTS `Projeto_ADS2` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+USE `Projeto_ADS2`;
 
 SET FOREIGN_KEY_CHECKS=0;
 
@@ -281,13 +281,13 @@ SELECT * FROM RankedData WHERE rn = 1;
 -- ETAPA 6: SEED (Dados iniciais para Dimensões)
 -- =======================================================================================
 
-INSERT INTO `role` (`role`) VALUES ('Damage'), ('Support'), ('Tank');
+INSERT INTO `role` (`role`) VALUES ('DAMAGE'), ('SUPPORT'), ('TANK');
 
 INSERT INTO `rank` (`rank_name`) VALUES
 ('Bronze'), ('Silver'), ('Gold'), ('Platinum'), ('Diamond'), ('Master'), ('Grandmaster');
 
 INSERT INTO `game_mode` (`game_mode_name`) VALUES
-('Control'), ('Escort'), ('Flashpoint'), ('Hybrid'), ('Push'), ('Clash');
+('Control'), ('Escort'), ('Flashpoint'), ('Hybrid'), ('Push');
 
 -- =======================================================================================
 -- ETAPA 7: CONFIRMAÇÃO DE CONCLUSÃO

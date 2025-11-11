@@ -11,7 +11,7 @@
 from fastapi import APIRouter, HTTPException, Path, Depends
 from mysql.connector.connection import MySQLConnection
 # --- Importa AMBAS as listas de segurança ---
-from app.security.table_whitelist_security import ALLOWED_GET_TABLES, EDITABLE_TABLES
+from app.security.db_whitelist_security import ALLOWED_GET_TABLES, EDITABLE_TABLES
 from utils.db_manager import get_db_connection, execute_api_query
 
 router = APIRouter()

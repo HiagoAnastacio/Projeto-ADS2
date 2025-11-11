@@ -12,6 +12,9 @@
 # Tabelas/Views que a API pode LER, mas NÃO modificar.
 # Inclui as novas tabelas de fato (que são populadas pelo ETL)
 # e as novas views _latest.
+from re import A
+
+
 READ_ONLY_TABLES = [
     # Novas Tabelas de Fato (Agregadas/Históricas)
     "hero_win",
@@ -48,8 +51,22 @@ EDITABLE_TABLES = [
     "game_mode"
     # Note: As tabelas de fato NÃO estão aqui, garantindo que só o ETL as popule.
 ]
+ALLOWED_FILTER_COLUMNS = [
+    "hero_id",
+    "rank_id",
+    "map_id",
+    "game_mode_id",
+    "role_id",
+    "date_of_the_data" # Embora seja tratado separadamente
+]
 
+ALLOWED_FILTER_ANALYTIC_ROUTES = [
+    "Analysis_Query"
+]
 # --- LISTAS CONSOLIDADAS PARA AS ROTAS ---
+
+# Lista completa de tabelas/views e rotas analiticas que podem ser lidas via GET pela rota de schemas.
+EVERTHING_READ_ONLY = READ_ONLY_TABLES + EDITABLE_TABLES + ALLOWED_FILTER_ANALYTIC_ROUTES + ALLOWED_FILTER_COLUMNS
 
 # Lista completa de tabelas/views que podem ser lidas via GET (genérico ou por ID, se aplicável).
 ALLOWED_GET_TABLES = READ_ONLY_TABLES + EDITABLE_TABLES

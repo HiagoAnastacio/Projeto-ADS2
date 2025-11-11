@@ -33,6 +33,10 @@ def fetch_and_parse_maps_from_web() -> List[Tuple[str, str]]:
     url = "https://overwatch.blizzard.com/en-us/rates/?"
     # Simula um navegador, conforme a lógica do extraction_helpers
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'}
+
+    # Loga a URL exata que está sendo acessada.
+    logger.info(f"Acessando API: {url}")
+    # --- FIM DA ADIÇÃO ---
     
     maps_data = []
     try:
