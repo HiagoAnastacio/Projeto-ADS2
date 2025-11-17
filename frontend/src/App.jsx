@@ -118,7 +118,7 @@ function App() {
 
   // Linha 116: Renderiza o layout principal.
   return (
-    <div className="container mx-auto p-4">
+    <div classNa  me="container mx-auto p-4">
       {/* ... Título ... */}
       
       {/* Linha 120: Renderiza o componente de Filtros. */}
