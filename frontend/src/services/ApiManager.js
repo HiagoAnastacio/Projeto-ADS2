@@ -1,15 +1,5 @@
 // =======================================================================================
-// MÓDULO GERENCIADOR DA API (CAMADA DE SERVIÇO) (v0.3.0 - Refatorado)
-// =======================================================================================
-// FLUXO E A LÓGICA:
-// 1. Cria a instância 'apiClient' do Axios com a baseURL correta.
-// 2. (REFATORADO) Remove todas as funções GET específicas (ex: getLatestRankStats).
-// 3. (REFATORADO) Exporta UMA ÚNICA função: `fetchAnalyticsData`.
-// 4. Esta função chama o endpoint genérico `POST /analysis/query` do backend,
-//    passando o corpo da consulta (queryBody) que o componente React solicitar.
-//
-// RAZÃO DE EXISTIR: Aplicar SoC e DRY. Centraliza 100% do acesso aos
-// dados analíticos em uma única função, espelhando a arquitetura do backend.
+// MÓDULO GERENCIADOR DA API (CAMADA DE SERVIÇO) (v0.4.0 - Adicionada busca de Dimensões)
 // =======================================================================================
 
 import axios from 'axios';
@@ -21,8 +11,21 @@ const apiClient = axios.create({
   }
 });
 
+/**
+ * [POST] Envia uma query complexa para o endpoint de análise.
+ * @param {object} queryBody - Corpo da consulta (type, metric, filters).
+ */
 export const fetchAnalyticsData = (queryBody) => {
   return apiClient.post('/ANALYSIS/QUERY', queryBody);
 };
+
+/**
+ * [GET] Busca a lista de IDs e Nomes para popular os filtros (Dimensões).
+ * @param {string} dimensionName - 'hero', 'rank', 'map', ou 'game_mode'.
+ */
+export const fetchDimensions = (dimensionName) => {
+    // Chama a nova rota de dimensões
+    return apiClient.get(`/DIMENSIONS/${dimensionName.toLowerCase()}`);
+}
 
 export default apiClient;
