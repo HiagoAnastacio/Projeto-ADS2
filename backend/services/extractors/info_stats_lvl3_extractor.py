@@ -126,7 +126,7 @@ def fetch_stats_data(rank_slug: str, map_slug: str) -> Optional[List[Any]]:
         # Se A não é nulo, B não é nulo, e A != B,
         # então 'data_a' são dados válidos e específicos do mapa.
         logger.info(f"Teste A/B (rq='{queue_value}'): SUCESSO! Dados VÁLIDOS obtidos para '{map_slug}'.")
-        return data_a
+        return data_a   
         
     # (Fim do Loop)
     logger.error(f"FALHA TOTAL. Nenhuma tentativa de 'rq' retornou dados VÁLIDOS para Rank='{rank_slug}', Mapa='{map_slug}'.")

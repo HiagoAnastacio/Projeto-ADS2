@@ -1,69 +1,56 @@
 # =======================================================================================
-# MÓDULO DE ROTA - ANÁLISE GENÉRICA (v2)
+# MÓDULO DE ROTA - ANÁLISE GENÉRICA (v2.2 - Centralized Security)
 # =======================================================================================
 # FLUXO E A LÓGICA:
-# 1. Define um endpoint `POST /API/V1-DATA/analysis/query` que aceita um corpo JSON.
-# 2. O corpo JSON (definido pelo modelo `AnalysisQuery`) permite ao frontend
-#    especificar a tabela, filtros (igualdade, 'IN') e intervalo de datas.
-# 3. (SEGURANÇA) Valida `table_name` contra a `ALLOWED_GET_TABLES`.
-# 4. (SEGURANÇA) Constrói a query SQL dinamicamente, mas de forma SEGURA,
-#    validando os nomes das colunas (chaves do dict de filtros) contra uma
-#    lista de colunas seguras, prevenindo SQL Injection.
-# 5. Executa a query e retorna os dados históricos ou filtrados.
-#
-# RAZÃO DE EXISTIR: Implementar a rota analítica genérica solicitada,
-# de forma segura, performática e flexível.
+# 1. Recebe o JSON (AnalysisQuery).
+# 2. Valida tabela, filtros e ordenação usando as listas do 'db_whitelist_security'.
+# 3. Constrói e executa a query SQL segura com ORDER BY dinâmico.
 # =======================================================================================
 
 import logging
 from fastapi import APIRouter, HTTPException, Depends, Body
 from mysql.connector.connection import MySQLConnection
-from typing import List, Dict, Any, Tuple
-from datetime import datetime
+from typing import List, Dict, Any
 
 # Importa o pool de conexões e o executor da API
 from utils.db_manager import get_db_connection, execute_api_query
-# Importa o modelo Pydantic para o corpo da requisição
+# Importa o modelo Pydantic
 from model.analytic_model import AnalysisQuery
-# Importa as listas de segurança
-from app.security.db_whitelist_security import ALLOWED_GET_TABLES, ALLOWED_FILTER_COLUMNS
+# Importa as listas de segurança (AGORA INCLUINDO SORT)
+from app.security.db_whitelist_security import (
+    ALLOWED_GET_TABLES, 
+    ALLOWED_FILTER_COLUMNS, 
+    ALLOWED_SORT_COLUMNS
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-# --- COLUNAS SEGURAS PERMITIDAS PARA FILTRO ---
-# (SEGURANÇA) Isso impede que o usuário tente filtrar por colunas
-# não indexadas ou injetar SQL (ex: "1=1; --")
-
 @router.post("/ANALYSIS/QUERY", tags=["Analysis & Dashboards"])
 async def run_analysis_query(
-    query: AnalysisQuery = Body(...), # Recebe o corpo JSON
+    query: AnalysisQuery = Body(...), 
     db_conn: MySQLConnection = Depends(get_db_connection)
 ) -> List[Dict[str, Any]]:
     """
-    Executa uma consulta analítica genérica e segura em uma tabela de fato ou view.
-    
-    Permite filtrar por igualdade, listas ('IN') e intervalos de datas.
+    Executa uma consulta analítica genérica.
+    Suporta filtros (=, IN), Range de Datas e Ordenação Dinâmica.
     """
     
-    # 1. VALIDAÇÃO DE SEGURANÇA (NOME DA TABELA)
+    # 1. VALIDAÇÃO DE SEGURANÇA (TABELA)
     if query.table_name not in ALLOWED_GET_TABLES:
         raise HTTPException(status_code=400, detail=f"O recurso '{query.table_name}' não é válido ou permitido para consulta.")
     
-    # Lista para armazenar as cláusulas WHERE
     where_clauses: List[str] = []
-    # Lista para armazenar os parâmetros (para prevenir SQL Injection)
     params: List[Any] = []
 
-    # 2. CONSTRUÇÃO DINÂMICA DA QUERY (SEGURA)
+    # 2. CONSTRUÇÃO DOS FILTROS (WHERE)
     
-    # --- Filtros de Igualdade (=) ---
+    # --- Filtros de Igualdade ---
     if query.filters_equal:
         for column, value in query.filters_equal.items():
-            # (SEGURANÇA) Verifica se a coluna está na nossa whitelist
             if column not in ALLOWED_FILTER_COLUMNS:
                 logger.warning(f"Tentativa de filtro em coluna não permitida: {column}")
-                continue # Pula este filtro
+                continue 
             
             where_clauses.append(f"`{column}` = %s")
             params.append(value)
@@ -75,15 +62,14 @@ async def run_analysis_query(
                 logger.warning(f"Tentativa de filtro 'IN' em coluna não permitida: {column}")
                 continue
             
-            if not value_list: # Se a lista estiver vazia, pula
+            if not value_list: 
                 continue
 
-            # Cria os placeholders (%s, %s, %s)
             placeholders = ", ".join(["%s"] * len(value_list))
             where_clauses.append(f"`{column}` IN ({placeholders})")
-            params.extend(value_list) # Adiciona todos os valores da lista aos parâmetros
+            params.extend(value_list)
 
-    # --- Filtros de Data (BETWEEN) ---
+    # --- Filtros de Data ---
     if query.start_date:
         where_clauses.append("`date_of_the_data` >= %s")
         params.append(query.start_date)
@@ -91,31 +77,32 @@ async def run_analysis_query(
         where_clauses.append("`date_of_the_data` <= %s")
         params.append(query.end_date)
         
-    # --- Montagem da Query Final ---
+    # --- Montagem Inicial do SQL ---
     sql = f"SELECT * FROM `{query.table_name}`"
     
     if where_clauses:
-        # Junta todas as condições com "AND"
         sql += " WHERE " + " AND ".join(where_clauses)
     
-    # Adiciona ORDER BY (útil para histórico) e LIMIT (proteção)
-    # Tenta ordenar pela data se existir, senão pelo ID da tabela
-    id_column = f"{query.table_name}_id"
-    sql += f" ORDER BY `date_of_the_data` DESC"
+    # 3. ORDENAÇÃO DINÂMICA (Centralizada)
+    sort_column = "date_of_the_data" # Padrão
+    
+    # Verifica se a coluna de ordenação está na Whitelist Central
+    if query.order_by and query.order_by in ALLOWED_SORT_COLUMNS:
+        sort_column = query.order_by
+    elif query.order_by:
+        logger.warning(f"Tentativa de ordenação inválida ignorada: {query.order_by}")
+
+    sql += f" ORDER BY `{sort_column}` DESC"
     sql += f" LIMIT %s"
     params.append(query.limit)
 
     logger.info(f"Executando Query Analítica: {sql}")
     
-    # 3. EXECUÇÃO
+    # 4. EXECUÇÃO
     try:
         result = execute_api_query(db_conn, sql, tuple(params))
-        
-        if result is None:
-            return []
-            
-        return result
+        return result if result is not None else []
         
     except Exception as e:
         logger.error(f"Erro ao executar query analítica: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Erro interno ao processar a consulta: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro interno: {e}")

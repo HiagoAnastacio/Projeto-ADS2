@@ -80,7 +80,7 @@ async def scheduler_lifespan(app):
     scheduler = AsyncIOScheduler(timezone="America/Sao_Paulo")
 
     scheduler.add_job(
-        run_update_pipeline, 'cron', day_of_week='mon', hour=8, minute=50, id="weekly_data_pipeline"
+        run_update_pipeline, 'cron', day_of_week='mon', hour=12, minute=40, id="weekly_data_pipeline"
     )
     # Para testes: Rodar imediatamente (descomente se necessário)
     # scheduler.add_job(run_update_pipeline, id="immediate_run")

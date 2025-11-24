@@ -57,6 +57,8 @@ ALLOWED_FILTER_COLUMNS = [
     "map_id",
     "game_mode_id",
     "role_id",
+    "win_rate",
+    "pick_rate",
     "date_of_the_data" # Embora seja tratado separadamente
 ]
 
@@ -64,9 +66,15 @@ ALLOWED_FILTER_ANALYTIC_ROUTES = [
     "Analysis_Query"
 ]
 # --- LISTAS CONSOLIDADAS PARA AS ROTAS ---
+ALLOWED_SORT_COLUMNS = [
+    "date_of_the_data", 
+    "win_rate", 
+    "pick_rate", 
+    "hero_id"
+]
 
 # Lista completa de tabelas/views e rotas analiticas que podem ser lidas via GET pela rota de schemas.
-EVERTHING_READ_ONLY = READ_ONLY_TABLES + EDITABLE_TABLES + ALLOWED_FILTER_ANALYTIC_ROUTES + ALLOWED_FILTER_COLUMNS
+EVERTHING_READ_ONLY = READ_ONLY_TABLES + EDITABLE_TABLES + ALLOWED_FILTER_ANALYTIC_ROUTES + ALLOWED_FILTER_COLUMNS + ALLOWED_SORT_COLUMNS
 
 # Lista completa de tabelas/views que podem ser lidas via GET (genérico ou por ID, se aplicável).
 ALLOWED_GET_TABLES = READ_ONLY_TABLES + EDITABLE_TABLES
