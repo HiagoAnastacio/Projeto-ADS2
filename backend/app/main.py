@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 # --- Importações da Aplicação ---\
 from routes import route_post, route_update, route_delete, routes_get
-from routes.req_body_exemple_route import route_schema_models
+from routes.req_body_exemples_routes import route_schema_models, route_schema_analytic
 from routes.analytic_routes import route_analysis
 from app.security.ratelimt_and_CORS_security import configure_middlewares
 from services.data_uploader import scheduler_lifespan
@@ -44,6 +44,7 @@ app.include_router(route_delete.router, prefix=API_PREFIX)
 
 # A rota de documentação dos modelos (útil para o frontend)
 app.include_router(route_schema_models.router, prefix=API_PREFIX)
+app.include_router(route_schema_analytic.router, prefix=API_PREFIX)
 
 logger.info(f"Roteadores de dados genéricos incluídos com prefixo: {API_PREFIX}")
 

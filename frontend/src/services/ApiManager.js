@@ -1,8 +1,11 @@
 // =======================================================================================
-// GERENCIADOR DE API (SERVICE LAYER) - Bootstrapping & Análise
+// GERENCIADOR DE API (SERVICE LAYER)
 // =======================================================================================
 // Responsabilidade: Centralizar chamadas HTTP.
-// Padrão: Usa a rota GET genérica já existente no Backend para buscar metadados.
+// Integração Atual:
+// 1. Bootstrapping (getGenericResource)
+// 2. Discovery de Modelo (getQueryTemplate) -> Conectado ao route_schema_analytic.py
+// 3. Análise (queryAnalytics)
 // =======================================================================================
 
 import axios from 'axios';
@@ -20,21 +23,42 @@ const apiClient = axios.create({
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error("Erro na API:", error.response?.data?.detail || error.message);
+    // Tenta extrair a mensagem de erro detalhada do FastAPI (ex: detail)
+    const errorMessage = error.response?.data?.detail || error.message;
+    console.error("Erro na API:", errorMessage);
     return Promise.reject(error);
   }
 );
 
 // =======================================================================================
-// 1. BOOTSTRAPPING (CARGA DE METADADOS VIA ROTA GENÉRICA)
-// O Frontend chama isso para baixar as tabelas inteiras de dimensão (Lookup Tables).
-// Usa a rota: GET /API/V1-DATA/{table_name} (definida em routes_get.py)
+// 1. DISCOVERY & SCHEMAS (Conexão com route_schema_analytic.py)
 // =======================================================================================
 
 /**
- * Busca todo o conteúdo de uma tabela (recurso) via rota genérica.
- * @param {string} resourceName - Nome da tabela (ex: 'hero', 'rank', 'map').
- * @returns {Promise<Array>} Lista completa de registros.
+ * [GET] Busca o Modelo de Requisição Analítica (Template JSON).
+ * Rota Backend: /MODELS/Analysis_Query/EXEMPLE
+ * * Objetivo: Obter o JSON "esqueleto" que o Backend espera (definido em AnalysisQuery),
+ * garantindo que o Frontend monte a query com os campos corretos.
+ */
+export const getQueryTemplate = async () => {
+    try {
+        const response = await apiClient.get('/MODELS/Analysis_Query/EXEMPLE');
+        // Retorna o objeto (ex: { table_name: "string", filters_equal: {}, ... })
+        return response.data; 
+    } catch (error) {
+        console.error("Erro crítico ao obter template de query (Schema):", error);
+        throw error;
+    }
+};
+
+// =======================================================================================
+// 2. BOOTSTRAPPING (CARGA DE DADOS ESTÁTICOS)
+// =======================================================================================
+
+/**
+ * [GET] Busca todo o conteúdo de uma tabela genérica (Dimensão).
+ * Rota: /{resourceName} (ex: /hero, /rank, /map)
+ * Usado para popular a memória do Frontend na inicialização.
  */
 export const getGenericResource = async (resourceName) => {
     try {
@@ -46,44 +70,14 @@ export const getGenericResource = async (resourceName) => {
     }
 };
 
-/**
- * Helper para carregar TODAS as dimensões necessárias de uma vez.
- * Deve ser chamado no useEffect inicial do App.jsx (ou Provider).
- */
-export const fetchAllMetadata = async () => {
-    try {
-        // Dispara requisições em paralelo para ganhar tempo
-        const [heroes, ranks, gameModes, maps, roles] = await Promise.all([
-            getGenericResource('hero'),
-            getGenericResource('rank'),
-            getGenericResource('game_mode'),
-            getGenericResource('map'),
-            getGenericResource('role')
-        ]);
-
-        return {
-            heroes,
-            ranks,
-            gameModes,
-            maps,
-            roles
-        };
-    } catch (error) {
-        console.error("Erro crítico no Bootstrapping de metadados:", error);
-        throw error;
-    }
-};
-
-
 // =======================================================================================
-// 2. ANÁLISE (DADOS DINÂMICOS)
-// Busca apenas os números (IDs e Taxas). O Frontend fará o JOIN com os metadados acima.
+// 3. ANÁLISE (QUERY DINÂMICA)
 // =======================================================================================
 
 /**
- * Envia uma consulta para o motor de análise.
- * Rota: POST /API/V1-DATA/ANALYSIS/QUERY
- * @param {object} queryBody - Objeto { table_name, filters_equal, etc. }
+ * [POST] Envia a consulta analítica para o Backend.
+ * Rota: /ANALYSIS/QUERY
+ * * @param {object} queryBody - O objeto JSON montado (baseado no template acima).
  */
 export const queryAnalytics = async (queryBody) => {
     try {
