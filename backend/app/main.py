@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 # --- Importações da Aplicação ---\
 from routes import route_post, route_update, route_delete, routes_get
 from routes.req_body_exemple_route import route_schema_models
-from routes.analytic_routes import route_analysis, route_dimensions
+from routes.analytic_routes import route_analysis
 from app.security.ratelimt_and_CORS_security import configure_middlewares
 from services.data_uploader import scheduler_lifespan
 
@@ -49,7 +49,6 @@ logger.info(f"Roteadores de dados genéricos incluídos com prefixo: {API_PREFIX
 
 # Registra o novo roteador de análise
 app.include_router(route_analysis.router, prefix=API_PREFIX)
-app.include_router(route_dimensions.router, prefix=API_PREFIX) # << NOVA INCLUSÃO
 logger.info(f"Roteadores de Análise e Dimensão incluídos com prefixo: {API_PREFIX}")
 # --- FIM DO REGISTRO ---
 
