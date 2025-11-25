@@ -73,3 +73,6 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Ignora a pasta content
+/content
