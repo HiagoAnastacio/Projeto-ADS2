@@ -27,6 +27,8 @@ READ_ONLY_TABLES = [
     "hero_game_mode_pick",
     "hero_rank_map_win", # Tabela granular mantida
     "hero_rank_map_pick", # Tabela granular mantida
+    "hero_game_mode_rank_win",
+    "hero_game_mode_rank_pick",
 
     # Novas Views _latest
     "vw_hero_win_latest",
@@ -37,6 +39,8 @@ READ_ONLY_TABLES = [
     "vw_hero_map_pick_latest",
     "vw_hero_game_mode_win_latest",
     "vw_hero_game_mode_pick_latest",
+    "vw_hero_game_mode_rank_win_latest",
+    "vw_hero_game_mode_rank_pick_latest",
     "vw_hero_rank_map_win_latest", # View _latest para a granular mantida
     "vw_hero_rank_map_pick_latest" # View _latest para a granular mantida
 ]

@@ -1,92 +1,105 @@
-// =======================================================================================
-// GERENCIADOR DE API (SERVICE LAYER)
-// =======================================================================================
-// Responsabilidade: Centralizar chamadas HTTP.
-// Integração Atual:
-// 1. Bootstrapping (getGenericResource)
-// 2. Discovery de Modelo (getQueryTemplate) -> Conectado ao route_schema_analytic.py
-// 3. Análise (queryAnalytics)
-// =======================================================================================
+/**
+ * ApiManager.js
+ *
+ * Camada de Serviço para comunicação HTTP com o Backend.
+ * Configura o cliente Axios, interceptadores e define funções tipadas
+ * para buscar recursos e realizar consultas analíticas.
+ */
 
+// Importa a biblioteca Axios para requisições HTTP
 import axios from 'axios';
 
-// Configuração base do cliente HTTP
+// =======================================================================================
+// CONFIGURAÇÃO DO CLIENTE HTTP
+// =======================================================================================
+
+// Cria uma instância do Axios com configurações padrão
 const apiClient = axios.create({
-  // Ajuste a URL se estiver rodando em Docker ou porta diferente
-  baseURL: 'http://localhost:8000/API/V1-DATA',
-  headers: {
-    'Content-Type': 'application/json'
-  }
+    // Base URL da API (Aponta para o endpoint de dados V1)
+    // Ajuste conforme ambiente: localhost, docker, prod
+    baseURL: 'http://localhost:8000/API/V1-DATA',
+    // Define cabeçalhos padrão
+    headers: {
+        'Content-Type': 'application/json' // Comunicação sempre em JSON
+    }
 });
 
-// Interceptor para logs de erro globais
+// Interceptor de Resposta: Tratamento global de erros
 apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Tenta extrair a mensagem de erro detalhada do FastAPI (ex: detail)
-    const errorMessage = error.response?.data?.detail || error.message;
-    console.error("Erro na API:", errorMessage);
-    return Promise.reject(error);
-  }
+    // Se sucesso, retorna a resposta sem alterações
+    (response) => response,
+    // Se erro, processa antes de repassar
+    (error) => {
+        // Extrai a mensagem de erro detalhada do backend ou usa a padrão
+        const errorMessage = error.response?.data?.detail || error.message;
+        // Loga o erro com a URL que falhou para facilitar o debug
+        console.error(`[API Error] ${error.config?.url}:`, errorMessage);
+        // Rejeita a promise para que o chamador possa tratar (catch)
+        return Promise.reject(error);
+    }
 );
 
 // =======================================================================================
-// 1. DISCOVERY & SCHEMAS (Conexão com route_schema_analytic.py)
+// 1. BOOTSTRAPPING (CARGA DE DADOS ESTÁTICOS/DIMENSÕES)
 // =======================================================================================
 
 /**
- * [GET] Busca o Modelo de Requisição Analítica (Template JSON).
- * Rota Backend: /MODELS/Analysis_Query/EXEMPLE
- * * Objetivo: Obter o JSON "esqueleto" que o Backend espera (definido em AnalysisQuery),
- * garantindo que o Frontend monte a query com os campos corretos.
- */
-export const getQueryTemplate = async () => {
-    try {
-        const response = await apiClient.get('/MODELS/Analysis_Query/EXEMPLE');
-        // Retorna o objeto (ex: { table_name: "string", filters_equal: {}, ... })
-        return response.data; 
-    } catch (error) {
-        console.error("Erro crítico ao obter template de query (Schema):", error);
-        throw error;
-    }
-};
-
-// =======================================================================================
-// 2. BOOTSTRAPPING (CARGA DE DADOS ESTÁTICOS)
-// =======================================================================================
-
-/**
- * [GET] Busca todo o conteúdo de uma tabela genérica (Dimensão).
- * Rota: /{resourceName} (ex: /hero, /rank, /map)
- * Usado para popular a memória do Frontend na inicialização.
+ * getGenericResource
+ * 
+ * Busca todo o conteúdo de uma tabela de dimensão.
+ * Usado para popular filtros e listas estáticas no frontend (ex: lista de heróis).
+ * 
+ * @param {string} resourceName - Nome do recurso/tabela (ex: 'hero', 'map', 'rank')
+ * @returns {Promise<Array>} Lista de objetos do recurso.
  */
 export const getGenericResource = async (resourceName) => {
     try {
+        // Faz GET na rota raiz do recurso (ex: /hero)
         const response = await apiClient.get(`/${resourceName}`);
+        // Retorna apenas os dados da resposta
         return response.data;
     } catch (error) {
+        // Loga erro específico de recurso
         console.error(`Falha ao buscar recurso [${resourceName}]:`, error);
+        // Lança o erro novamente
         throw error;
     }
 };
 
 // =======================================================================================
-// 3. ANÁLISE (QUERY DINÂMICA)
+// 2. ANÁLISE (QUERY DINÂMICA)
 // =======================================================================================
 
 /**
- * [POST] Envia a consulta analítica para o Backend.
- * Rota: /ANALYSIS/QUERY
- * * @param {object} queryBody - O objeto JSON montado (baseado no template acima).
+ * queryAnalytics
+ * 
+ * Envia uma consulta analítica complexa para o Backend.
+ * Utiliza o endpoint POST /ANALYSIS/QUERY para flexibilidade de filtros.
+ * Segue o schema definido em `route_schema_analytic.py` no backend.
+ * 
+ * @param {object} queryBody - Objeto contendo:
+ *  - table_name: string (Obrigatório - ex: 'vw_hero_win_latest')
+ *  - filters_equal: object (Opcional - ex: { hero_id: 1 })
+ *  - filters_in: object (Opcional - ex: { hero_id: [1, 2] })
+ *  - start_date: string (Opcional)
+ *  - end_date: string (Opcional)
+ *  - limit: number (Default: 100)
+ * 
+ * @returns {Promise<Array>} Lista de resultados da consulta.
  */
 export const queryAnalytics = async (queryBody) => {
     try {
+        // Faz POST enviando o corpo da query
         const response = await apiClient.post('/ANALYSIS/QUERY', queryBody);
+        // Retorna os dados analíticos
         return response.data;
     } catch (error) {
+        // Loga erro de consulta analítica
         console.error("Falha na consulta analítica:", error);
+        // Lança o erro novamente
         throw error;
     }
 };
 
+// Exporta o cliente axios configurado como padrão, caso necessário uso direto
 export default apiClient;

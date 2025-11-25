@@ -70,7 +70,7 @@ def _fetch_data_internal(
     params = f"input={PLATFORM}&map={map_slug}&region={REGION}&role={ROLE}&rq={queue_value}&tier={rank_slug}"
     api_url = f"{BASE_URL}{params}"
     
-    logger.debug(f"Acessando API: {api_url}")
+    logger.info(f"Acessando API: {api_url}")
     
     raw_data = fetch_api_data(api_url)
     return _get_api_data_list(raw_data)

@@ -1,17 +1,24 @@
-// Linha 1: Importa o 'StrictMode' do React (para ajudar a encontrar bugs).
+/**
+ * main.jsx
+ *
+ * Ponto de entrada principal da aplicação React.
+ * Responsável por encontrar o elemento raiz no HTML e renderizar a árvore de componentes.
+ */
+
+// Importa o modo estrito do React para destacar potenciais problemas na aplicação
 import { StrictMode } from 'react'
-// Linha 2: Importa a função para renderizar o React no DOM.
+// Importa a função createRoot para inicializar a renderização concorrente do React 18+
 import { createRoot } from 'react-dom/client'
-// Linha 3: Importa o CSS global.
+// Importa os estilos globais da aplicação
 import './index.css'
-// Linha 4: Importa o componente "cérebro" da aplicação.
+// Importa o componente raiz da aplicação
 import App from './App.jsx'
 
-// Linha 6: Encontra a <div> com id="root" no 'index.html' e a torna a raiz do React.
+// Seleciona o elemento DOM com id 'root' e cria a raiz do React
 createRoot(document.getElementById('root')).render(
-  // Linha 7: Ativa o StrictMode.
+  // Envolve a aplicação no StrictMode para verificações adicionais durante o desenvolvimento
   <StrictMode>
-    {/* Linha 8: Renderiza o componente App.jsx. */}
+    {/* Renderiza o componente principal App */}
     <App />
   </StrictMode>,
 )
