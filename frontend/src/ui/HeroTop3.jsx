@@ -49,27 +49,40 @@ const HeroTop3 = () => {
                 // Ordena os dados por Win Rate decrescente e pega os 3 primeiros
                 const sorted = data.sort((a, b) => parseValue(b.win_rate) - parseValue(a.win_rate)).slice(0, 3);
 
-                // Enriquece os dados com informações de metadados (nome, role)
+                // --- BUSCA DE HISTÓRICO REAL (Sparkline) ---
+                // Extrai os IDs dos top 3 heróis
+                const topHeroIds = sorted.map(h => h.hero_id);
+
+                // Busca histórico apenas para esses heróis na tabela 'hero_win'
+                // Usa filters_in para buscar múltiplos IDs de uma vez
+                let historyData = [];
+                if (topHeroIds.length > 0) {
+                    historyData = await fetchAnalytics({
+                        table_name: 'hero_win',
+                        limit: 500, // Garante histórico suficiente
+                        filters_in: { hero_id: topHeroIds }
+                    });
+                }
+
+                // Enriquece os dados com informações de metadados e histórico real
                 const enriched = sorted.map(item => {
                     // Busca info do herói na lista estática
                     const heroInfo = heroes.find(h => h.hero_id === item.hero_id);
                     const winRateVal = parseValue(item.win_rate);
+
+                    // Filtra o histórico específico deste herói e ordena por data
+                    const heroHistory = historyData
+                        .filter(h => h.hero_id === item.hero_id)
+                        .sort((a, b) => new Date(a.date_of_the_data) - new Date(b.date_of_the_data))
+                        .map(h => ({ value: parseValue(h.win_rate) }));
 
                     return {
                         ...item,
                         hero_name: heroInfo?.hero_name || 'Unknown',
                         role_name: heroInfo?.role_name || 'Role',
                         win_rate: winRateVal, // Garante número para exibição correta
-                        // Mock de tendência para o Sparkline (simulação visual)
-                        // Em produção, isso viria de uma query histórica específica para cada herói
-                        trend: [
-                            { value: winRateVal * 0.8 },
-                            { value: winRateVal * 0.9 },
-                            { value: winRateVal * 0.85 },
-                            { value: winRateVal * 1.1 },
-                            { value: winRateVal * 0.95 },
-                            { value: winRateVal }
-                        ]
+                        // Usa o histórico real se existir, senão usa um fallback (apenas o valor atual)
+                        trend: heroHistory.length > 0 ? heroHistory : [{ value: winRateVal }]
                     };
                 });
 
