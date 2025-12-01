@@ -1,74 +1,90 @@
-/**
- * Table.jsx
- *
- * Componente de Tabela Genérica e Dinâmica.
- * Renderiza uma tabela HTML baseada em um array de objetos JSON.
- * As colunas são geradas automaticamente a partir das chaves do primeiro objeto.
- */
+import React, { memo } from 'react';
 
-const Table = ({ data }) => {
-    // Verifica se há dados para exibir
+const Table = memo(({ data }) => {
     if (!data || data.length === 0) {
-        // Exibe mensagem amigável se não houver dados
         return (
-            <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                <p className="text-gray-500">Nenhum dado disponível para os filtros selecionados.</p>
+            <div className="text-center py-20 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                <p className="text-slate-400 font-light text-lg">Nenhum dado encontrado para esta análise.</p>
             </div>
         );
     }
 
-    // Extrai as chaves do primeiro objeto para criar o cabeçalho dinamicamente
-    // Isso permite que a tabela se adapte a qualquer estrutura de dados passada
     const columns = Object.keys(data[0]);
 
+    // Função auxiliar para renderizar células com formatação especial
+    const renderCell = (col, value, row) => {
+        // 1. Coluna de Herói com Avatar
+        if (col === 'Herói') {
+            return (
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-500 ring-2 ring-white">
+                        {value[0]}
+                    </div>
+                    <span className="font-medium text-slate-900">{value}</span>
+                </div>
+            );
+        }
+
+        // 2. Coluna de Win Rate com Badges
+        if (col === 'Win Rate (%)') {
+            const numValue = parseFloat(value);
+            let badgeColor = "bg-slate-100 text-slate-600"; // Neutro
+
+            if (numValue >= 52) badgeColor = "bg-emerald-100 text-emerald-700"; // Positivo
+            if (numValue <= 48) badgeColor = "bg-rose-100 text-rose-700"; // Negativo
+
+            return (
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeColor}`}>
+                    {numValue.toFixed(2)}%
+                </span>
+            );
+        }
+
+        // 3. Formatação Padrão
+        if (typeof value === 'number') {
+            return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+        }
+        return value;
+    };
+
     return (
-        // Container com overflow-x para permitir rolagem horizontal em telas pequenas
-        <div className="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-            <table className="min-w-full divide-y divide-gray-300">
-                {/* Cabeçalho da Tabela */}
-                <thead className="bg-gray-50">
-                    <tr>
-                        {columns.map((col) => (
-                            <th
-                                key={col}
-                                scope="col"
-                                // Estilização do cabeçalho: uppercase, negrito, espaçamento
-                                className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 uppercase tracking-wider"
-                            >
-                                {/* Substitui underscores por espaços para melhor legibilidade (ex: hero_name -> HERO NAME) */}
-                                {col.replace(/_/g, ' ')}
-                            </th>
-                        ))}
-                    </tr>
-                </thead>
-                {/* Corpo da Tabela */}
-                <tbody className="divide-y divide-gray-200 bg-white">
-                    {data.map((row, rowIndex) => (
-                        // Alterna a cor de fundo das linhas (zebra striping)
-                        <tr key={rowIndex} className={rowIndex % 2 === 0 ? undefined : 'bg-gray-50'}>
+        <div className="overflow-hidden shadow-sm ring-1 ring-black ring-opacity-5 rounded-xl bg-white">
+            <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-100">
+                    <thead className="bg-gray-50/50">
+                        <tr>
                             {columns.map((col) => (
-                                <td
-                                    key={`${rowIndex}-${col}`}
-                                    className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 sm:pl-6"
+                                <th
+                                    key={col}
+                                    scope="col"
+                                    className="py-4 pl-6 pr-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"
                                 >
-                                    {/* Lógica de Formatação de Célula */}
-                                    {/* Se a coluna tem 'date' no nome, formata como data */}
-                                    {col.includes('date')
-                                        ? new Date(row[col]).toLocaleDateString()
-                                        // Se for número, formata com locale (ex: 1.000,00)
-                                        : typeof row[col] === 'number'
-                                            ? row[col].toLocaleString(undefined, { maximumFractionDigits: 2 })
-                                            // Caso contrário, exibe o valor bruto
-                                            : row[col]}
-                                </td>
+                                    {col}
+                                </th>
                             ))}
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 bg-white">
+                        {data.map((row, rowIndex) => (
+                            <tr
+                                key={rowIndex}
+                                className="hover:bg-gray-50/80 transition-colors duration-150"
+                            >
+                                {columns.map((col) => (
+                                    <td
+                                        key={`${rowIndex}-${col}`}
+                                        className="whitespace-nowrap py-4 pl-6 pr-3 text-sm text-slate-600"
+                                    >
+                                        {renderCell(col, row[col], row)}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
-};
+});
 
-// Exporta o componente Table
 export default Table;

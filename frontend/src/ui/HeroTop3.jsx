@@ -1,168 +1,112 @@
-/**
- * HeroTop3.jsx
- *
- * Componente de Destaque (Showcase).
- * Exibe os 3 heróis com maior taxa de vitória (Win Rate) globalmente.
- * Inclui cards com estatísticas e um mini-gráfico de tendência (Sparkline).
- */
-
-// Importa hooks e contexto
-import { useState, useEffect } from 'react';
-import { useAppData } from '../context/AppDataContext';
-// Importa componentes visuais
+import React from 'react';
+import { ArrowDown, TrendingUp, TrendingDown } from 'lucide-react';
 import Sparkline from '../components/Sparkline';
-import { Trophy, TrendingUp } from 'lucide-react';
 
-/**
- * Componente HeroTop3
- * 
- * Busca dados da view 'vw_hero_win_latest' e filtra os top 3.
- */
 const HeroTop3 = () => {
-    // Acessa dados globais e função de fetch
-    const { heroes, fetchAnalytics } = useAppData();
-    // Estado local para armazenar os top heróis processados
-    const [topHeroes, setTopHeroes] = useState([]);
-    // Estado de carregamento
-    const [loading, setLoading] = useState(true);
-
-    // Efeito para carregar dados ao montar o componente
-    useEffect(() => {
-        const loadTopHeroes = async () => {
-            try {
-                // Busca os dados mais recentes de Win Rate (snapshot)
-                const data = await fetchAnalytics({
-                    table_name: 'vw_hero_win_latest',
-                    limit: 100 // Busca um lote grande para garantir que temos todos os heróis para ordenar
-                });
-
-                // Helper para garantir que os valores sejam numéricos
-                const parseValue = (val) => {
-                    if (val === null || val === undefined) return 0;
-                    if (typeof val === 'number') return val;
-                    if (typeof val === 'string') {
-                        return parseFloat(val.replace(',', '.'));
-                    }
-                    return 0;
-                };
-
-                // Ordena os dados por Win Rate decrescente e pega os 3 primeiros
-                const sorted = data.sort((a, b) => parseValue(b.win_rate) - parseValue(a.win_rate)).slice(0, 3);
-
-                // Enriquece os dados com informações de metadados (nome, role)
-                const enriched = sorted.map(item => {
-                    // Busca info do herói na lista estática
-                    const heroInfo = heroes.find(h => h.hero_id === item.hero_id);
-                    const winRateVal = parseValue(item.win_rate);
-
-                    return {
-                        ...item,
-                        hero_name: heroInfo?.hero_name || 'Unknown',
-                        role_name: heroInfo?.role_name || 'Role',
-                        win_rate: winRateVal, // Garante número para exibição correta
-                        // Mock de tendência para o Sparkline (simulação visual)
-                        // Em produção, isso viria de uma query histórica específica para cada herói
-                        trend: [
-                            { value: winRateVal * 0.8 },
-                            { value: winRateVal * 0.9 },
-                            { value: winRateVal * 0.85 },
-                            { value: winRateVal * 1.1 },
-                            { value: winRateVal * 0.95 },
-                            { value: winRateVal }
-                        ]
-                    };
-                });
-
-                setTopHeroes(enriched);
-            } catch (error) {
-                console.error("Erro ao carregar Top 3:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        // Só carrega se já tivermos a lista de heróis (dependência do contexto)
-        if (heroes.length > 0) {
-            loadTopHeroes();
+    // Mock Data (Substituir por API real depois)
+    const topHeroes = [
+        {
+            id: 1,
+            name: 'Sojourn',
+            role: 'Damage',
+            winRate: 54.2,
+            trend: [45, 48, 52, 51, 54, 53, 54.2],
+            image: 'https://d15f34w2p97es5.cloudfront.net/avatars/sojourn.png' // Placeholder
+        },
+        {
+            id: 2,
+            name: 'Kiriko',
+            role: 'Support',
+            winRate: 52.8,
+            trend: [50, 51, 51, 52, 52.5, 53, 52.8],
+            image: 'https://d15f34w2p97es5.cloudfront.net/avatars/kiriko.png'
+        },
+        {
+            id: 3,
+            name: 'Junker Queen',
+            role: 'Tank',
+            winRate: 51.5,
+            trend: [48, 49, 48, 50, 51, 51.2, 51.5],
+            image: 'https://d15f34w2p97es5.cloudfront.net/avatars/junker-queen.png'
         }
-    }, [heroes, fetchAnalytics]);
+    ];
 
-    // Renderização de Loading (Skeleton UI)
-    if (loading) {
-        return (
-            <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Cria 3 placeholders pulsantes */}
-                    {[1, 2, 3].map(i => (
-                        <div key={i} className="h-48 bg-gray-200 rounded-xl animate-pulse"></div>
-                    ))}
-                </div>
-            </div>
-        );
-    }
-
-    // Se não houver dados, não renderiza nada
-    if (topHeroes.length === 0) return null;
+    const handleScrollToAnalysis = () => {
+        const analysisSection = document.getElementById('analysis');
+        if (analysisSection) {
+            analysisSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
 
     return (
-        <section className="w-full bg-white border-b border-gray-200 mb-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-                {/* Título da Seção */}
-                <div className="flex items-center mb-6">
-                    <Trophy className="h-6 w-6 text-yellow-500 mr-2" />
-                    <h2 className="text-2xl font-bold text-gray-900">Top 3 Heróis (Win Rate)</h2>
-                </div>
+        <section className="relative min-h-[85vh] flex flex-col justify-center items-center bg-gray-50 px-6 pt-20 pb-10">
+            {/* Background Decorativo (Sutil) */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-100/30 rounded-full blur-3xl" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-rose-100/30 rounded-full blur-3xl" />
+            </div>
+
+            <div className="relative z-10 w-full max-w-6xl text-center">
+                <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
+                    Destaques do Meta
+                    <span className="block text-lg md:text-xl font-normal text-slate-500 mt-2">
+                        Semana Atual • Competitivo Global
+                    </span>
+                </h1>
 
                 {/* Grid de Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 mb-16">
                     {topHeroes.map((hero, index) => (
-                        <div key={hero.hero_id || index} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow relative overflow-hidden">
-                            {/* Medalha de Rank (Número de fundo) */}
-                            <div className="absolute top-4 right-4 text-6xl font-black text-gray-50 opacity-50 z-0 select-none">
-                                #{index + 1}
+                        <div
+                            key={hero.id}
+                            className="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 flex flex-col items-center"
+                        >
+                            <div className="relative mb-4">
+                                <div className="w-20 h-20 rounded-full bg-gray-200 overflow-hidden ring-4 ring-gray-50 group-hover:ring-emerald-50 transition-all">
+                                    {/* Fallback para imagem se não carregar */}
+                                    <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400 font-bold text-xl">
+                                        {hero.name[0]}
+                                    </div>
+                                    {/* <img src={hero.image} alt={hero.name} className="w-full h-full object-cover" /> */}
+                                </div>
+                                <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-1 shadow-sm border border-gray-100">
+                                    {index === 0 && <span className="text-xl">🥇</span>}
+                                    {index === 1 && <span className="text-xl">🥈</span>}
+                                    {index === 2 && <span className="text-xl">🥉</span>}
+                                </div>
                             </div>
 
-                            <div className="relative z-10">
-                                {/* Header do Card: Nome e Ícone */}
-                                <div className="flex items-center justify-between mb-4">
-                                    <div>
-                                        <h3 className="text-lg font-bold text-gray-900">{hero.hero_name}</h3>
-                                        <span className="text-sm text-gray-500">Win Rate Global</span>
-                                    </div>
-                                    {/* Avatar do Herói (Placeholder ou Imagem) */}
-                                    <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-xl overflow-hidden">
-                                        {hero.hero_icon_img_link ? (
-                                            <img src={hero.hero_icon_img_link} alt={hero.hero_name} className="h-full w-full object-cover" />
-                                        ) : (
-                                            '' // Fallback vazio
-                                        )}
-                                    </div>
-                                </div>
+                            <h3 className="text-lg font-semibold text-slate-900">{hero.name}</h3>
+                            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-4">{hero.role}</span>
 
-                                {/* Estatísticas Principais */}
-                                <div className="flex items-end justify-between">
-                                    <div>
-                                        <p className="text-sm text-gray-500 mb-1">Win Rate</p>
-                                        <p className="text-3xl font-extrabold text-gray-900">{hero.win_rate}%</p>
-                                    </div>
-                                </div>
+                            <div className="flex items-end gap-2 mb-4">
+                                <span className="text-4xl font-light text-slate-900 tracking-tighter">
+                                    {hero.winRate}%
+                                </span>
+                                <span className="flex items-center text-emerald-600 text-sm font-medium mb-1">
+                                    <TrendingUp size={16} className="mr-1" />
+                                    +1.2%
+                                </span>
+                            </div>
 
-                                {/* Gráfico de Tendência (Sparkline) */}
-                                <div className="mt-4 pt-4 border-t border-gray-50">
-                                    <p className="text-xs text-gray-400 mb-2 uppercase tracking-wide">Tendência (Estimada)</p>
-                                    {/* Container com altura fixa para o gráfico */}
-                                    <div className="h-16">
-                                        <Sparkline data={hero.trend} color={index === 0 ? "#eab308" : "#f97316"} />
-                                    </div>
-                                </div>
+                            <div className="w-full h-12 opacity-70 group-hover:opacity-100 transition-opacity">
+                                <Sparkline data={hero.trend.map(v => ({ value: v }))} color="#10b981" />
                             </div>
                         </div>
                     ))}
                 </div>
+
+                {/* CTA Button */}
+                <button
+                    onClick={handleScrollToAnalysis}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-slate-400 hover:bg-white transition-all duration-300 group"
+                >
+                    <span>Explore o Meta</span>
+                    <ArrowDown size={18} className="group-hover:translate-y-1 transition-transform" />
+                </button>
             </div>
         </section>
     );
 };
 
-// Exporta o componente
 export default HeroTop3;
