@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAppData } from '../context/AppDataContext';
 import Dropdown from '../components/Dropdown';
 import Table from '../components/Table';
+import WinRateChart from '../components/dashboards/WinRateChart';
+import PickRateChart from '../components/dashboards/PickRateChart';
 import { Search, Loader2 } from 'lucide-react';
 
 // Hook de Debounce personalizado
@@ -41,9 +43,11 @@ const AnalysisSection = () => {
 
     // --- Estado dos Dados ---
     const [tableData, setTableData] = useState([]);
+    const [chartWinData, setChartWinData] = useState([]);
+    const [chartPickData, setChartPickData] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    // Debounce dos filtros para evitar requisições excessivas
+    // Debounce dos filtros
     const debouncedFilters = useDebounce(filters, 500);
 
     // --- Handlers ---
@@ -77,46 +81,105 @@ const AnalysisSection = () => {
         });
     };
 
+    // --- Lógica de Seleção de Tabela Dinâmica ---
+    const getTableNames = (f) => {
+        let winTable = 'hero_win';
+        let pickTable = 'hero_pick';
+
+        // Combinações com Rank (Prioridade Alta)
+        if (f.map_id && f.rank_id) {
+            winTable = 'hero_rank_map_win';
+            pickTable = 'hero_rank_map_pick';
+        } else if (f.game_mode_id && f.rank_id) {
+            winTable = 'hero_game_mode_rank_win';
+            pickTable = 'hero_game_mode_rank_pick';
+        }
+        // Filtros Únicos
+        else if (f.map_id) {
+            winTable = 'hero_map_win';
+            pickTable = 'hero_map_pick';
+        } else if (f.game_mode_id) {
+            winTable = 'hero_game_mode_win';
+            pickTable = 'hero_game_mode_pick';
+        } else if (f.rank_id) {
+            winTable = 'hero_rank_win';
+            pickTable = 'hero_rank_pick';
+        }
+
+        return { winTable, pickTable };
+    };
+
     // --- Lógica de Busca (Effect) ---
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                // Simulação de delay de rede para ver o loading state (remover em prod)
-                // await new Promise(resolve => setTimeout(resolve, 800));
-
                 const { hero_id, map_id, rank_id, role_id, game_mode_id } = debouncedFilters;
                 const isDefault = !hero_id && !map_id && !rank_id && !role_id && !game_mode_id;
 
-                let data = [];
+                let tWin = [], tPick = [];
 
                 if (isDefault) {
-                    // Busca snapshot mais recente
-                    const [tWin, tPick] = await Promise.all([
+                    // Busca snapshot mais recente para a tabela
+                    const [latestWin, latestPick] = await Promise.all([
                         fetchAnalytics({ table_name: 'vw_hero_win_latest', limit: 100 }),
                         fetchAnalytics({ table_name: 'vw_hero_pick_latest', limit: 100 })
                     ]);
-                    data = enrichData(tWin, tPick);
-                } else {
-                    // Lógica de filtros (simplificada para focar na tabela)
-                    // ... (Mesma lógica de getTableName do original, omitida para brevidade, mas idealmente extraída)
-                    // Para este MVP, vamos usar a busca padrão filtrada no cliente ou backend se implementado
-                    // Assumindo que fetchAnalytics suporta filtros:
+                    tWin = latestWin;
+                    tPick = latestPick;
 
+                    // Para gráficos, buscamos histórico (hero_win)
+                    const [histWin, histPick] = await Promise.all([
+                        fetchAnalytics({ table_name: 'hero_win', limit: 500 }),
+                        fetchAnalytics({ table_name: 'hero_pick', limit: 500 })
+                    ]);
+                    setChartWinData(histWin);
+                    setChartPickData(histPick);
+
+                } else {
+                    // 1. Determina quais tabelas consultar
+                    const { winTable, pickTable } = getTableNames(debouncedFilters);
+
+                    // 2. Monta os filtros
                     const filtersEqual = {};
+                    const filtersIn = {};
+
                     if (hero_id) filtersEqual.hero_id = hero_id;
                     if (map_id) filtersEqual.map_id = map_id;
                     if (rank_id) filtersEqual.rank_id = rank_id;
+                    if (game_mode_id) filtersEqual.game_mode_id = game_mode_id;
 
-                    // Fallback: Busca na tabela de fatos principal (ex: hero_win)
-                    const [tWin, tPick] = await Promise.all([
-                        fetchAnalytics({ table_name: 'hero_win', filters_equal: filtersEqual, limit: 100 }),
-                        fetchAnalytics({ table_name: 'hero_pick', filters_equal: filtersEqual, limit: 100 })
+                    // Lógica de Role (Filtro IN)
+                    if (role_id) {
+                        // Encontra todos os heróis com essa role_id
+                        const heroesInRole = heroes.filter(h => h.role_id === role_id).map(h => h.hero_id);
+                        if (heroesInRole.length > 0) {
+                            filtersIn.hero_id = heroesInRole;
+                        } else {
+                            // Se não tem heróis nessa role, retorna vazio e aborta
+                            setTableData([]);
+                            setLoading(false);
+                            return;
+                        }
+                    }
+
+                    // 3. Busca os dados
+                    const [resWin, resPick] = await Promise.all([
+                        fetchAnalytics({ table_name: winTable, filters_equal: filtersEqual, filters_in: filtersIn, limit: 200 }),
+                        fetchAnalytics({ table_name: pickTable, filters_equal: filtersEqual, filters_in: filtersIn, limit: 200 })
                     ]);
-                    data = enrichData(tWin, tPick);
+                    tWin = resWin;
+                    tPick = resPick;
+
+                    // Atualiza gráficos com os mesmos dados filtrados
+                    setChartWinData(resWin);
+                    setChartPickData(resPick);
                 }
 
-                setTableData(data);
+                // 4. Enriquece e formata para a tabela
+                const enriched = enrichData(tWin, tPick);
+                setTableData(enriched);
+
             } catch (error) {
                 console.error("Erro ao buscar dados:", error);
             } finally {
@@ -125,77 +188,119 @@ const AnalysisSection = () => {
         };
 
         fetchData();
-    }, [debouncedFilters]); // Dispara quando os filtros (debounced) mudam
+    }, [debouncedFilters, heroes]);
 
     // --- Helper: Enriquecer Dados ---
     const enrichData = (winData, pickData) => {
         if (!winData) return [];
+
         const pickMap = new Map();
-        if (pickData) pickData.forEach(p => pickMap.set(`${p.hero_id}-${p.map_id}`, p.pick_rate));
+        if (pickData) {
+            pickData.forEach(p => {
+                const key = `${p.hero_id}-${p.date_of_the_data}`;
+                pickMap.set(key, p.pick_rate);
+            });
+        }
 
         return winData.map(item => {
             const hero = heroes.find(h => h.hero_id === item.hero_id);
             const map = maps.find(m => m.map_id === item.map_id);
             const rank = ranks.find(r => r.rank_id === item.rank_id);
+            const mode = gameModes.find(g => g.game_mode_id === item.game_mode_id);
+
+            const dateObj = new Date(item.date_of_the_data);
+            const formattedDate = dateObj.toLocaleDateString('pt-BR');
 
             return {
-                ...item,
-                'Herói': hero ? hero.hero_name : item.hero_id,
-                'Mapa': map ? map.map_name : 'Todos',
-                'Rank': rank ? rank.rank_name : 'Todos',
+                'Ícone': hero ? hero.hero_icon_img_link : null,
+                'Herói': hero ? hero.hero_name : `ID ${item.hero_id}`,
                 'Win Rate (%)': item.win_rate,
-                'Pick Rate (%)': pickMap.get(`${item.hero_id}-${item.map_id}`) || item.pick_rate || 0
+                'Pick Rate (%)': pickMap.get(`${item.hero_id}-${item.date_of_the_data}`) || item.pick_rate || '-',
+                'Data': formattedDate,
+                ...(map && { 'Mapa': map.map_name }),
+                ...(rank && { 'Rank': rank.rank_name }),
+                ...(mode && { 'Modo': mode.game_mode_name }),
             };
         });
     };
 
     // --- Preparação dos Itens (Memoized) ---
-    const heroItems = useMemo(() => [{ label: 'Todos', id: null }, ...heroes.map(h => ({ label: h.hero_name, id: h.hero_id }))].map(i => ({ ...i, action: () => handleFilterChange('hero_id', i, 'hero') })), [heroes]);
-    const mapItems = useMemo(() => [{ label: 'Todos', id: null }, ...maps.map(m => ({ label: m.map_name, id: m.map_id }))].map(i => ({ ...i, action: () => handleFilterChange('map_id', i, 'map') })), [maps]);
-    const rankItems = useMemo(() => [{ label: 'Todos', id: null }, ...ranks.map(r => ({ label: r.rank_name, id: r.rank_id }))].map(i => ({ ...i, action: () => handleFilterChange('rank_id', i, 'rank') })), [ranks]);
-
+    // Adicionado labels e handleFilterChange às dependências para evitar stale closures
+    const heroItems = useMemo(() => [{ label: 'Todos os Heróis', id: null }, ...heroes.map(h => ({ label: h.hero_name, id: h.hero_id }))].map(i => ({ ...i, action: () => handleFilterChange('hero_id', i, 'hero') })), [heroes, labels]);
+    const mapItems = useMemo(() => [{ label: 'Todos os Mapas', id: null }, ...maps.map(m => ({ label: m.map_name, id: m.map_id }))].map(i => ({ ...i, action: () => handleFilterChange('map_id', i, 'map') })), [maps, labels]);
+    const rankItems = useMemo(() => [{ label: 'Todos os Ranks', id: null }, ...ranks.map(r => ({ label: r.rank_name || r.rank || r.name || 'Rank', id: r.rank_id }))].map(i => ({ ...i, action: () => handleFilterChange('rank_id', i, 'rank') })), [ranks, labels]);
+    const roleItems = useMemo(() => [{ label: 'Todas as Funções', id: null }, ...roles.map(r => ({ label: r.role_name || r.role || r.name || 'Role', id: r.role_id }))].map(i => ({ ...i, action: () => handleFilterChange('role_id', i, 'role') })), [roles, labels]);
+    const modeItems = useMemo(() => [{ label: 'Todos os Modos', id: null }, ...gameModes.map(g => ({ label: g.game_mode_name || g.mode_name || g.name || 'Modo', id: g.game_mode_id }))].map(i => ({ ...i, action: () => handleFilterChange('game_mode_id', i, 'game_mode') })), [gameModes, labels]);
 
     return (
-        <section id="analysis" className="w-full min-h-screen bg-white py-20 px-6 relative">
+        <section id="analysis-section" className="w-full min-h-screen bg-white py-20 px-6 relative">
             <div className="max-w-7xl mx-auto">
 
                 {/* Barra de Consulta Flutuante (Natural Language Form) */}
                 <div className="sticky top-24 z-40 flex justify-center mb-16">
-                    <div className="bg-white/90 backdrop-blur-xl border border-gray-200 shadow-xl rounded-full px-8 py-4 flex flex-col md:flex-row items-center gap-3 md:gap-2 text-lg md:text-xl text-slate-500 transition-all hover:shadow-2xl hover:border-emerald-200/50">
+                    <div className="bg-white/90 backdrop-blur-xl border border-gray-200 shadow-xl rounded-full px-8 py-4 flex flex-col md:flex-row items-center gap-3 md:gap-2 text-lg md:text-xl text-slate-500 transition-all hover:shadow-2xl hover:border-emerald-200/50 flex-wrap justify-center">
                         <Search className="w-5 h-5 text-emerald-500 mr-2 hidden md:block" />
 
                         <span className="whitespace-nowrap">Analisar</span>
 
-                        <div className="relative group">
-                            <Dropdown
-                                label={labels.hero}
-                                items={heroItems}
-                                variant="text"
-                                className="min-w-[150px] text-center md:text-left"
-                            />
-                        </div>
+                        {/* Dropdown Herói ou Role (Mutuamente Exclusivos) */}
+                        {filters.role_id === null && (
+                            <div className="relative group">
+                                <Dropdown label={labels.hero} items={heroItems} variant="text" className="min-w-[150px] text-center md:text-left" />
+                            </div>
+                        )}
 
-                        <span className="whitespace-nowrap">em</span>
+                        {filters.hero_id === null && (
+                            <>
+                                {filters.role_id === null && <span className="text-sm text-gray-300 mx-1">ou</span>}
+                                <div className="relative group">
+                                    <Dropdown label={labels.role} items={roleItems} variant="text" className="min-w-[150px] text-center md:text-left" />
+                                </div>
+                            </>
+                        )}
 
-                        <div className="relative group">
-                            <Dropdown
-                                label={labels.map}
-                                items={mapItems}
-                                variant="text"
-                                className="min-w-[150px] text-center md:text-left"
-                            />
-                        </div>
+                        {/* Conectivo Dinâmico */}
+                        <span className="whitespace-nowrap">
+                            {filters.game_mode_id ? 'no modo' : 'em'}
+                        </span>
+
+                        {/* Dropdown Mapa ou Modo (Mutuamente Exclusivos) */}
+                        {filters.game_mode_id === null && (
+                            <div className="relative group">
+                                <Dropdown label={labels.map} items={mapItems} variant="text" className="min-w-[150px] text-center md:text-left" />
+                            </div>
+                        )}
+
+                        {filters.map_id === null && (
+                            <>
+                                {filters.game_mode_id === null && <span className="text-sm text-gray-300 mx-1">ou</span>}
+                                <div className="relative group">
+                                    <Dropdown label={labels.game_mode} items={modeItems} variant="text" className="min-w-[150px] text-center md:text-left" />
+                                </div>
+                            </>
+                        )}
 
                         <span className="whitespace-nowrap hidden md:inline">no rank</span>
                         <span className="whitespace-nowrap md:hidden">rank</span>
 
                         <div className="relative group">
-                            <Dropdown
-                                label={labels.rank}
-                                items={rankItems}
-                                variant="text"
-                                className="min-w-[120px] text-center md:text-left"
-                            />
+                            <Dropdown label={labels.rank} items={rankItems} variant="text" className="min-w-[120px] text-center md:text-left" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Área de Gráficos (Restaurada e com mais espaço) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                        <h3 className="text-lg font-bold text-slate-800 mb-4">Tendência de Win Rate</h3>
+                        <div className="h-[40vh] min-h-[350px] w-full">
+                            <WinRateChart data={chartWinData} heroes={heroes} />
+                        </div>
+                    </div>
+                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                        <h3 className="text-lg font-bold text-slate-800 mb-4">Tendência de Pick Rate</h3>
+                        <div className="h-[40vh] min-h-[350px] w-full">
+                            <PickRateChart data={chartPickData} heroes={heroes} />
                         </div>
                     </div>
                 </div>

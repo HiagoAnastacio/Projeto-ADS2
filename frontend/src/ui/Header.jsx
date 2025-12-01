@@ -27,8 +27,8 @@ const Header = () => {
     // Lista de links externos para o Dropdown
     const blizzardLinks = [
         { label: 'Overwatch 2 Oficial', action: () => window.open('https://overwatch.blizzard.com/pt-br/', '_blank') },
+        { label: 'Overwatch 2 Patch Notes', action: () => window.open('https://overwatch.blizzard.com/pt-br/news/patch-notes/', '_blank') },
         { label: 'Battle.net', action: () => window.open('https://us.shop.battle.net/pt-br', '_blank') },
-        { label: 'Overwatch League', action: () => window.open('https://overwatchleague.com/', '_blank') },
     ];
 
     return (
@@ -38,10 +38,13 @@ const Header = () => {
                 <div className="flex justify-between h-16">
                     {/* Logo e Título da Aplicação */}
                     <div className="flex items-center">
-                        <div className="flex-shrink-0 flex items-center text-orange-600">
+                        <button
+                            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                            className="flex-shrink-0 flex items-center text-orange-600 cursor-pointer hover:opacity-80 transition-opacity"
+                        >
                             <BarChart2 className="h-8 w-8 mr-2" />
-                            <span className="font-bold text-xl tracking-tight text-gray-900">OverWatch<span className="text-orange-600">Analytics</span></span>
-                        </div>
+                            <span className="font-bold text-xl tracking-tight text-gray-900">Overwatch<span className="text-orange-600">MetaAnalyzer</span></span>
+                        </button>
                     </div>
 
                     {/* Menu Desktop (visível apenas em telas sm ou maiores) */}

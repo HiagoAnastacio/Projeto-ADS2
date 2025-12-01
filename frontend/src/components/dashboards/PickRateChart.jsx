@@ -25,7 +25,7 @@ const PickRateChart = ({ data, heroes }) => {
     if (!data || data.length === 0) {
         ChartLogger.logRender('PickRateChart', 'RENDER_EMPTY', 'Dados nulos ou vazios.');
         return (
-            <div className="h-80 flex items-center justify-center bg-gray-50 rounded-xl border border-dashed border-gray-300">
+            <div className="h-full flex items-center justify-center bg-gray-50 rounded-xl border border-dashed border-gray-300">
                 <p className="text-gray-500">Sem dados de Pick Rate para exibir.</p>
             </div>
         );
@@ -108,7 +108,7 @@ const PickRateChart = ({ data, heroes }) => {
         console.error("Erro fatal ao formatar dados do gráfico:", err);
         ChartLogger.logRender('PickRateChart', 'RENDER_ERROR', err.message);
         return (
-            <div className="h-80 flex items-center justify-center bg-red-50 rounded-xl border border-red-200">
+            <div className="h-full flex items-center justify-center bg-red-50 rounded-xl border border-red-200">
                 <p className="text-red-500">Erro ao processar dados do gráfico.</p>
             </div>
         );
@@ -118,7 +118,7 @@ const PickRateChart = ({ data, heroes }) => {
     if (chartData.length === 0) {
         ChartLogger.logRender('PickRateChart', 'RENDER_EMPTY', 'Nenhum dado válido após processamento.');
         return (
-            <div className="h-80 flex items-center justify-center bg-yellow-50 rounded-xl border border-yellow-200">
+            <div className="h-full flex items-center justify-center bg-yellow-50 rounded-xl border border-yellow-200">
                 <p className="text-yellow-600">Dados recebidos mas inválidos para exibição.</p>
             </div>
         );
@@ -127,46 +127,43 @@ const PickRateChart = ({ data, heroes }) => {
     ChartLogger.logRender('PickRateChart', 'RENDER_CHART', `Renderizando ${chartData.length} pontos com ${lines.length} linhas.`);
 
     return (
-        // Card container
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-w-0">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Evolução da Taxa de Escolha (Pick Rate)</h3>
-            <div style={{ width: '100%', height: 320 }}>
-                <ResponsiveContainer width="99%" height="100%" debounce={50}>
-                    <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                        <XAxis
-                            dataKey="formattedDate"
-                            tick={{ fontSize: 12, fill: '#9ca3af' }}
-                            axisLine={false}
-                            tickLine={false}
+        <div className="w-full h-full">
+            <ResponsiveContainer width="100%" height="100%" debounce={50}>
+                <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                    <XAxis
+                        dataKey="formattedDate"
+                        tick={{ fontSize: 12, fill: '#9ca3af' }}
+                        axisLine={false}
+                        tickLine={false}
+                    />
+                    <YAxis
+                        tick={{ fontSize: 12, fill: '#9ca3af' }}
+                        axisLine={false}
+                        tickLine={false}
+                        unit="%"
+                        domain={['auto', 'auto']}
+                    />
+                    <Tooltip
+                        contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                        itemStyle={{ color: '#1f2937' }}
+                        itemSorter={(item) => -item.value}
+                    />
+                    {lines.length <= 12 && <Legend />}
+                    {lines.map(line => (
+                        <Line
+                            key={line.dataKey}
+                            type="monotone"
+                            dataKey={line.dataKey}
+                            name={line.name}
+                            stroke={line.color}
+                            strokeWidth={3}
+                            dot={{ r: 4, fill: line.color, strokeWidth: 2, stroke: '#fff' }}
+                            activeDot={{ r: 6 }}
                         />
-                        <YAxis
-                            tick={{ fontSize: 12, fill: '#9ca3af' }}
-                            axisLine={false}
-                            tickLine={false}
-                            unit="%"
-                            domain={['auto', 'auto']}
-                        />
-                        <Tooltip
-                            contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                            itemStyle={{ color: '#1f2937' }}
-                        />
-                        <Legend />
-                        {lines.map(line => (
-                            <Line
-                                key={line.dataKey}
-                                type="monotone"
-                                dataKey={line.dataKey}
-                                name={line.name}
-                                stroke={line.color}
-                                strokeWidth={3}
-                                dot={{ r: 4, fill: line.color, strokeWidth: 2, stroke: '#fff' }}
-                                activeDot={{ r: 6 }}
-                            />
-                        ))}
-                    </LineChart>
-                </ResponsiveContainer>
-            </div>
+                    ))}
+                </LineChart>
+            </ResponsiveContainer>
         </div>
     );
 };

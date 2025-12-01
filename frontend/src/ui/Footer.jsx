@@ -25,7 +25,7 @@ const Footer = () => {
                     {/* Lado Esquerdo: Copyright e Aviso de Atualização */}
                     <div className="flex flex-col space-y-2">
                         <p className="text-base text-gray-400">
-                            &copy; {new Date().getFullYear()} OverWatch Analytics. Todos os direitos reservados.
+                            &copy; {new Date().getFullYear()} Overwatch MetaAnalyzer. Todos os direitos reservados.
                         </p>
                         <div className="flex items-center text-sm text-gray-500">
                             <Calendar className="h-4 w-4 mr-1 text-orange-500" />

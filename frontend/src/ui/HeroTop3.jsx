@@ -94,7 +94,15 @@ const HeroTop3 = () => {
         );
     }
 
-    if (topHeroes.length === 0) return null;
+    if (topHeroes.length === 0) {
+        return (
+            <div className="w-full min-h-[50vh] flex flex-col items-center justify-center text-gray-500">
+                <Trophy className="h-12 w-12 mb-4 text-gray-300" />
+                <p className="text-lg font-medium">Ainda não há dados suficientes para o ranking.</p>
+                <p className="text-sm">Verifique se o backend completou a carga de dados.</p>
+            </div>
+        );
+    }
 
     return (
         <section className="relative min-h-[85vh] flex flex-col justify-center items-center bg-gray-50 px-6 pt-20 pb-10">
@@ -106,7 +114,7 @@ const HeroTop3 = () => {
 
             <div className="relative z-10 w-full max-w-6xl text-center">
                 <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
-                    Destaques do Meta
+                    Líderes de Vitória no Meta
                     <span className="block text-lg md:text-xl font-normal text-slate-500 mt-2">
                         Semana Atual • Competitivo Global
                     </span>
@@ -138,16 +146,14 @@ const HeroTop3 = () => {
                             </div>
 
                             <h3 className="text-lg font-semibold text-slate-900">{hero.hero_name}</h3>
-                            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-4">{hero.role_name}</span>
+                            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-4">{hero.role_name || hero.role || 'Função'}</span>
 
-                            <div className="flex items-end gap-2 mb-4">
+                            <div className="flex flex-col items-center mb-4">
                                 <span className="text-4xl font-light text-slate-900 tracking-tighter">
                                     {hero.win_rate}%
                                 </span>
-                                {/* Mock de variação percentual, já que não calculamos isso no backend ainda */}
-                                <span className="flex items-center text-emerald-600 text-sm font-medium mb-1">
-                                    <TrendingUp size={16} className="mr-1" />
-                                    +1.2%
+                                <span className="text-xs font-medium text-emerald-600 mt-1">
+                                    Taxa de Vitória
                                 </span>
                             </div>
 

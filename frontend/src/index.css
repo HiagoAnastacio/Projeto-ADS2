@@ -1,9 +1,8 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 @layer base {
   body {
+    /* Na v4, @apply funciona, mas as cores devem ser referenciadas corretamente */
     @apply bg-gray-50 text-slate-900 antialiased;
   }
 }

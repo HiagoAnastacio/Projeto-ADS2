@@ -13,21 +13,29 @@ const Table = memo(({ data }) => {
 
     // Função auxiliar para renderizar células com formatação especial
     const renderCell = (col, value, row) => {
-        // 1. Coluna de Herói com Avatar
-        if (col === 'Herói') {
+        // 1. Coluna de Ícone (Imagem do Herói)
+        if (col === 'Ícone') {
             return (
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-500 ring-2 ring-white">
-                        {value[0]}
-                    </div>
-                    <span className="font-medium text-slate-900">{value}</span>
+                <div className="w-10 h-10 rounded-full bg-slate-100 overflow-hidden ring-1 ring-slate-200">
+                    {value ? (
+                        <img src={value} alt="Hero Icon" className="w-full h-full object-cover" />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs font-bold text-slate-400">?</div>
+                    )}
                 </div>
             );
         }
 
-        // 2. Coluna de Win Rate com Badges
+        // 2. Coluna de Herói (Texto)
+        if (col === 'Herói') {
+            return <span className="font-semibold text-slate-900">{value}</span>;
+        }
+
+        // 3. Coluna de Win Rate com Badges
         if (col === 'Win Rate (%)') {
-            const numValue = parseFloat(value);
+            const numValue = typeof value === 'string' ? parseFloat(value.replace(',', '.')) : value;
+            if (isNaN(numValue)) return value;
+
             let badgeColor = "bg-slate-100 text-slate-600"; // Neutro
 
             if (numValue >= 52) badgeColor = "bg-emerald-100 text-emerald-700"; // Positivo
@@ -40,7 +48,7 @@ const Table = memo(({ data }) => {
             );
         }
 
-        // 3. Formatação Padrão
+        // 4. Formatação Padrão
         if (typeof value === 'number') {
             return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
         }
