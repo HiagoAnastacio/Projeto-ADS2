@@ -1,102 +1,70 @@
 # Overwatch Meta Analyzer
 
-![GitHub repo size](https://img.shields.io/github/repo-size/iuricode/README-template?style=for-the-badge)
-![GitHub language count](https://img.shields.io/github/languages/count/iuricode/README-template?style=for-the-badge)
-![GitHub forks](https://img.shields.io/github/forks/iuricode/README-template?style=for-the-badge)
-![Bitbucket open issues](https://img.shields.io/bitbucket/issues/iuricode/README-template?style=for-the-badge)
-![Bitbucket open pull requests](https://img.shields.io/bitbucket/pr-raw/iuricode/README-template?style=for-the-badge)
+> Uma plataforma de análise de dados avançada para Overwatch 2, focado em visualização de tendências de meta, taxas de vitória e escolha de heróis através de patchs.
 
-<img src="https://i.imgur.com/3Q9Q8L2.png" alt="Exemplo de imagem do projeto">
+![Status do Projeto](https://img.shields.io/badge/Status-Em_Desenvolvimento-yellow)
+![Versão](https://img.shields.io/badge/Versão-0.8.0-blue)
 
-> Uma ferramenta robusta de análise de dados para o ecossistema competitivo de Overwatch 2, fornecendo insights detalhados sobre o "Meta", Win Rates e Pick Rates através de um dashboard interativo.
+## 📋 Sobre o Projeto
 
-### Ajustes e melhorias
+O **Overwatch Meta Analyzer** é uma ferramenta desenvolvida para transformar dados brutos de partidas em insights acionáveis. Diferente de trackings convencionais, nosso foco é a **análise histórica e comparativa** entre mudanças de balanceamento (patches).
 
-O projeto ainda está em desenvolvimento e as próximas atualizações serão voltadas nas seguintes tarefas:
+### Diferenciais
+- **Análise Multi-Dimensional**: Filtre por Herói, Função, Mapa, Rank e Modo de Jogo simultaneamente.
+- **Interatividade Visual**: Gráficos sincronizados com efeitos de "Highlight & Dimming" para foco instantâneo.
+- **Contexto Histórico**: Compare métricas entre patches específicos para entender o impacto de buffs e nerfs.
 
-- [x] Criação de pipelines de ETL (Extract, Transform, Load)
-- [x] Dashboard de Análise (Win Rate & Pick Rate)
-- [x] Filtros Dinâmicos (Rank, Mapa, Herói)
-- [ ] Otimização para Mobile
-- [ ] Integração com Docker (Cloud Deployment)
+## 🚀 Funcionalidades (Fase 2 - Completa)
 
-## 💻 Pré-requisitos
+### 📊 Painel Analítico
+- **Filtros de Linguagem Natural**: Interface intuitiva ("Analisar [Heróis] em [Mapa]...") que constrói a query visualmente.
+- **Seleção Múltipla**: Compare `Ana`, `Baptiste` e `Kiriko` no mesmo gráfico com coloração distinta.
+- **Filtros Dinâmicos**: O sistema ajusta automaticamente as opções (ex: ao selecionar "Role", remove seleção de "Heróis").
 
-Antes de começar, verifique se você atendeu aos seguintes requisitos:
+### 📈 Visualização de Dados
+- **Gráficos de Tendência**: Linhas do tempo para Win Rate e Pick Rate.
+- **Highlight Sincronizado**: Ao passar o mouse sobre um herói (gráfico ou legenda), ele é destacado em **todos** os painéis.
+- **Legendas Inteligentes**:
+  - **Tooltips Focados**: Mostram apenas os dados do herói em destaque.
+  - **Dimming**: Nomes não selecionados na legenda ficam opacos para reduzir ruído visual.
 
-*   Você instalou a versão mais recente de `Python 3.10+`
-*   Você instalou a versão mais recente de `Node.js 18+`
-*   Você possui um banco de dados `MySQL 8.0+` configurado e rodando.
+### 📱 Experiência do Usuário
+- **Design Responsivo**: Interface adaptada para desktop e correções de usabilidade para mobile.
+- **Feedback Visual**: Loaders, estados de erro e interações de hover refinadas.
 
-## 🚀 Instalando Overwatch Meta Analyzer
+## 🛠️ Tecnologias Utilizadas
 
-Para instalar o Overwatch Meta Analyzer, siga estas etapas:
+- **Frontend**: React.js, TailwindCSS, Recharts, Lucide Icons.
+- **Backend**: FastAPI (Python), Pandas.
+- **Banco de Dados**: MySQL (Estrutura Data Warehouse - Star/Snowflake Schema).
 
-### Backend (API)
-```bash
-cd backend
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-# Configure o .env com suas credenciais do MySQL
-```
+## 📦 Como Executar
 
-### Frontend (Dashboard)
-```bash
-cd frontend
-npm install
-```
+1. **Clone o Repositório**
+   ```bash
+   git clone https://github.com/SeuUsuario/Projeto-ADS2.git
+   cd Projeto-ADS2
+   ```
 
-### Banco de Dados
-Execute o script `backend/data/Sql_build.sql` no seu servidor MySQL para criar a estrutura necessária.
+2. **Backend (API)**
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   uvicorn app.main:app --reload
+   ```
 
-## ☕ Usando Overwatch Meta Analyzer
+3. **Frontend (Interface)**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
 
-Para usar o Meta Analyzer, siga estas etapas:
+4. **Acesse**: `http://localhost:5173`
 
-1.  Inicie a API Backend:
-    ```bash
-    cd backend
-    uvicorn app.main:app --reload
-    ```
-2.  Inicie o Frontend:
-    ```bash
-    cd frontend
-    npm run dev
-    ```
-3.  Acesse `http://localhost:5173` no seu navegador.
+## 🤝 Contribuição
 
-Acesse a **Seção de Análise**, utilize os filtros no topo para selecionar o contexto desejado (ex: Mapa "King's Row" no Rank "Platinum") e visualize os gráficos de tendência e a tabela detalhada.
+Este é um projeto acadêmico (ADS - Senac). Sugestões via Issues são bem-vindas!
 
-## 📫 Contribuindo para Overwatch Meta Analyzer
-
-Para contribuir com Overwatch Meta Analyzer, siga estas etapas:
-
-1.  Bifurque este repositório.
-2.  Crie um branch: `git checkout -b <nome_branch>`.
-3.  Faça suas alterações e confirme-as: `git commit -m '<mensagem_commit>'`
-4.  Envie para o branch original: `git push origin Overwatch-Meta-Analyzer / <local>`
-5.  Crie a solicitação de pull.
-
-Como alternativa, consulte a documentação do GitHub em [como criar uma solicitação pull](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request).
-
-## 🤝 Colaboradores
-
-Agradecemos às seguintes pessoas que contribuíram para este projeto:
-
-<table>
-  <tr>
-    <td align="center">
-      <a href="#">
-        <img src="https://i.imgur.com/o2b2r1r.png" width="100px;" alt="Foto do Estudante"/><br>
-        <sub>
-          <b>Estudantes ADS</b>
-        </sub>
-      </a>
-    </td>
-  </tr>
-</table>
-
-## 📝 Licença
-
-Esse projeto está sob licença. Veja o arquivo [LICENÇA](LICENSE) para mais detalhes.
+---
+*Desenvolvido pela Equipe do Projeto ADS2*
