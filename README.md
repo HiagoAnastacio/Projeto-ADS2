@@ -1,199 +1,102 @@
-<a id="readme-top"></a>
+# Overwatch Meta Analyzer
 
-<br />
-<div align="center">
-  
-<h2 align="center">Overwatch 2 - Stats API & ETL Pipeline</h2>
+![GitHub repo size](https://img.shields.io/github/repo-size/iuricode/README-template?style=for-the-badge)
+![GitHub language count](https://img.shields.io/github/languages/count/iuricode/README-template?style=for-the-badge)
+![GitHub forks](https://img.shields.io/github/forks/iuricode/README-template?style=for-the-badge)
+![Bitbucket open issues](https://img.shields.io/bitbucket/issues/iuricode/README-template?style=for-the-badge)
+![Bitbucket open pull requests](https://img.shields.io/bitbucket/pr-raw/iuricode/README-template?style=for-the-badge)
 
-  <p align="center">
-    Um backend de alta performance em FastAPI para extração, gestão e análise de estatísticas de heróis de Overwatch 2, com um pipeline de dados totalmente automatizado e suporte a histórico de dados.
-    <br />
-    <a href="https://github.com/HiagoAnastacio/Projeto-ADS2/issues">Reportar Bug</a>
-    ·
-    <a href="https://github.com/HiagoAnastacio/Projeto-ADS2/issues/new?labels=enhancement&template=feature-request---.md">Sugerir Funcionalidade</a>
-  </p>
-</div>
+<img src="https://i.imgur.com/3Q9Q8L2.png" alt="Exemplo de imagem do projeto">
 
-<details open>
-  <summary><strong>📝 Sumário</strong></summary>
-  <ol>
-    <li><a href="#-sobre-o-projeto">Sobre o Projeto</a></li>
-    <li><a href="#-arquitetura-e-princípios">Arquitetura e Princípios</a></li>
-    <li><a href="#-tecnologias-utilizadas">Tecnologias Utilizadas</a></li>
-    <li>
-      <a href="#-guia-de-instalação-e-uso">Guia de Instalação e Uso</a>
-      <ul>
-        <li><a href="#pré-requisitos">Pré-requisitos</a></li>
-        <li><a href="#instalação-e-configuração">Instalação e Configuração</a></li>
-        <li><a href="#executando-a-aplicação">Executando a Aplicação</a></li>
-      </ul>
-    </li>
-    <li><a href="#-estrutura-da-api-restful-v1">Estrutura da API RESTful (v1)</a></li>
-    <li><a href="#-pipeline-de-etl">Pipeline de ETL</a></li>
-    <li><a href="#-banco-de-dados">Banco de Dados</a></li>
-    <li><a href="#-próximos-passos-roadmap">Próximos Passos (Roadmap)</a></li>
-    <li><a href="#-licença">Licença</a></li>
-    <li><a href="#-contato">Contato</a></li>
-  </ol>
-</details>
+> Uma ferramenta robusta de análise de dados para o ecossistema competitivo de Overwatch 2, fornecendo insights detalhados sobre o "Meta", Win Rates e Pick Rates através de um dashboard interativo.
 
----
+### Ajustes e melhorias
 
-### 🚀 Sobre o Projeto
+O projeto ainda está em desenvolvimento e as próximas atualizações serão voltadas nas seguintes tarefas:
 
-Este projeto consiste em um backend robusto construído com **FastAPI** que serve uma **API RESTful** para acesso a dados estatísticos do jogo Overwatch 2. Os dados são coletados e mantidos atualizados por um **pipeline de ETL (Extração, Transformação e Carga)** automatizado que utiliza a API interna da Blizzard.
+- [x] Criação de pipelines de ETL (Extract, Transform, Load)
+- [x] Dashboard de Análise (Win Rate & Pick Rate)
+- [x] Filtros Dinâmicos (Rank, Mapa, Herói)
+- [ ] Otimização para Mobile
+- [ ] Integração com Docker (Cloud Deployment)
 
-A principal característica do projeto é o **armazenamento historiográfico** dos dados. Ao contrário da plataforma oficial, nosso banco de dados salva *snapshots* do meta ao longo do tempo (a cada execução do pipeline), permitindo análises temporais detalhadas sobre como o balanceamento afeta o jogo.
+## 💻 Pré-requisitos
 
-A arquitetura de BI (Business Intelligence) utiliza **Renderização no Lado do Cliente (Client-Side Rendering)**. O backend expõe um endpoint de consulta analítica (`POST /analysis/query`) que retorna JSON bruto, e o frontend utiliza a biblioteca **Recharts** para desenhar os gráficos interativos.
+Antes de começar, verifique se você atendeu aos seguintes requisitos:
 
-<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
+*   Você instalou a versão mais recente de `Python 3.10+`
+*   Você instalou a versão mais recente de `Node.js 18+`
+*   Você possui um banco de dados `MySQL 8.0+` configurado e rodando.
 
----
+## 🚀 Instalando Overwatch Meta Analyzer
 
-### 🏛️ Arquitetura e Princípios
+Para instalar o Overwatch Meta Analyzer, siga estas etapas:
 
-O backend segue uma arquitetura modular e aderente aos princípios de boas práticas de desenvolvimento:
+### Backend (API)
+```bash
+cd backend
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+# Configure o .env com suas credenciais do MySQL
+```
 
-* **Separação de Responsabilidades (SoC):**
-    * **API (FastAPI):** Lida com requisições HTTP (`routes/`), validação (`model/models.py`) e gerenciamento de conexões (`utils/db_manager.py`).
-    * **Pipeline de ETL (APScheduler + `services/`):** A lógica de ETL é desacoplada em três camadas (Extractors, Loaders, Orchestrators).
-* **Don't Repeat Yourself (DRY):**
-    * **API Genérica:** Utiliza rotas dinâmicas (`/{table_name}`) e um resolvedor de modelos (`model_resolver.py`) para evitar a duplicação de código CRUD.
-    * **Helpers (Utils):** Funções comuns (como requisições HTTP ou execução de SQL) são centralizadas.
-* **API RESTful:** As rotas seguem os padrões REST, com versionamento (`/API/V1-DATA/`).
-* **Armazenamento Historiográfico:**
-    * As tabelas de fato (ex: `hero_rank_win`) são projetadas para armazenar *snapshots* históricos.
+### Frontend (Dashboard)
+```bash
+cd frontend
+npm install
+```
 
-<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
+### Banco de Dados
+Execute o script `backend/data/Sql_build.sql` no seu servidor MySQL para criar a estrutura necessária.
 
----
+## ☕ Usando Overwatch Meta Analyzer
 
-### ✨ Tecnologias Utilizadas
+Para usar o Meta Analyzer, siga estas etapas:
 
-#### Backend (Python)
-* **Framework Principal:** FastAPI
-* **Servidor ASGI:** Uvicorn
-* **Validação de Dados:** Pydantic
-* **Agendamento de Tarefas (ETL):** APScheduler
-* **Chamadas de API (ETL):** `Requests`
-* **Web Scraping (ETL):** `BeautifulSoup4`
-* **Configuração:** `python-dotenv`
+1.  Inicie a API Backend:
+    ```bash
+    cd backend
+    uvicorn app.main:app --reload
+    ```
+2.  Inicie o Frontend:
+    ```bash
+    cd frontend
+    npm run dev
+    ```
+3.  Acesse `http://localhost:5173` no seu navegador.
 
-#### Frontend (JavaScript)
-* **Biblioteca Principal:** React
-* **Ferramenta de Build/Servidor:** Vite
-* **Cliente HTTP:** Axios
-* **Biblioteca de Gráficos:** **Recharts** (NOVO)
-* **Estilização:** Tailwind CSS
-* **Linter:** ESLint
+Acesse a **Seção de Análise**, utilize os filtros no topo para selecionar o contexto desejado (ex: Mapa "King's Row" no Rank "Platinum") e visualize os gráficos de tendência e a tabela detalhada.
 
-#### Banco de Dados
-* **SGBD:** MySQL (8.0+)
-* **Driver Python:** `mysql-connector-python`
+## 📫 Contribuindo para Overwatch Meta Analyzer
 
-<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
+Para contribuir com Overwatch Meta Analyzer, siga estas etapas:
 
----
+1.  Bifurque este repositório.
+2.  Crie um branch: `git checkout -b <nome_branch>`.
+3.  Faça suas alterações e confirme-as: `git commit -m '<mensagem_commit>'`
+4.  Envie para o branch original: `git push origin Overwatch-Meta-Analyzer / <local>`
+5.  Crie a solicitação de pull.
 
-### 🛠️ Guia de Instalação e Uso
+Como alternativa, consulte a documentação do GitHub em [como criar uma solicitação pull](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request).
 
-(Esta seção permanece a mesma da versão anterior: Pré-requisitos, Instalação, Execução)
+## 🤝 Colaboradores
 
-<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
+Agradecemos às seguintes pessoas que contribuíram para este projeto:
 
----
+<table>
+  <tr>
+    <td align="center">
+      <a href="#">
+        <img src="https://i.imgur.com/o2b2r1r.png" width="100px;" alt="Foto do Estudante"/><br>
+        <sub>
+          <b>Estudantes ADS</b>
+        </sub>
+      </a>
+    </td>
+  </tr>
+</table>
 
-### 🌐 Estrutura da API RESTful (v1)
+## 📝 Licença
 
-A API segue os padrões RESTful e está versionada sob `/API/V1-DATA/`.
-
-**Endpoints Genéricos (CRUD):**
-
-* `GET /API/V1-DATA/{resource_name}`: Lista todos os registros de uma tabela ou view permitida (`ALLOWED_GET_TABLES`).
-* `POST /API/V1-DATA/{resource_name}`: Cria um novo registro.
-* `PUT /API/V1-DATA/{resource_name}/{item_id}`: Atualiza um registro.
-* `DELETE /API/V1-DATA/{resource_name}/{item_id}`: Exclui um registro.
-
-**Endpoint de Análise (v1.1 - NOVO):**
-
-* `POST /API/V1-DATA/analysis/query`: Um endpoint genérico de consulta de BI (Business Intelligence).
-    * **Função:** Permite ao frontend solicitar dados (JSON) complexos e históricos para a renderização de gráficos.
-    * **Corpo (Body):** Aceita um objeto `AnalysisQuery` que especifica:
-        * `table_name`: A tabela/view a ser consultada (ex: `hero_win` para histórico).
-        * `filters_equal`: Filtros de igualdade (ex: `{"hero_id": 1}`).
-        * `start_date` / `end_date`: Filtros de período.
-    * **Resposta:** Retorna um JSON com os dados brutos para o frontend renderizar o gráfico (via Recharts).
-
-**Endpoint de Documentação Auxiliar:**
-
-* `GET /API/V1-DATA/models/{table_name}/example`: Retorna um exemplo de corpo JSON esperado para uma tabela específica.
-
-<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
-
----
-
-### 🔄 Pipeline de ETL
-
-O pipeline automatizado (`data_uploader.py`) é responsável por manter o banco de dados atualizado.
-
-* **Arquitetura (SoC):** O pipeline segue um padrão modular de **Extração, Carga e Orquestração** (E-L-O).
-    * **`services/extractors/`**: Responsável por extrair dados das fontes externas (API da Blizzard, Web Scraping).
-    * **`services/loaders/`**: Responsável por carregar (inserir/atualizar) os dados no banco de dados.
-    * **`services/orchestrators/`**: Responsável por controlar o fluxo (ex: "primeiro extraia os heróis, depois carregue os heróis").
-* **Lógica de Coleta de Fatos:**
-    * O orquestrador (`run_stats_lvl3_pipeline.py`) chama o extrator (`info_stats_lvl3_extractor.py`) iterativamente com diferentes combinações de filtros.
-    * **Lógica de Derivação (Transformação):** Como a API não fornece todas as agregações (ex: média por rank), o orquestrador primeiro insere os dados granulares e depois executa queries `INSERT ... SELECT ... GROUP BY` para calcular e popular as tabelas agregadas restantes.
-
-<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
-
----
-
-### 💾 Banco de Dados
-
-* **Tecnologia:** MySQL 8.0+.
-* **Modelo:** Híbrido, com tabelas de **Dimensão** (`hero`, `rank`, `map`, etc.) e tabelas de **Fato** (`hero_win`, `hero_rank_win`, etc.).
-* **Integridade:** Dimensões usam `UNIQUE KEY` nos nomes para evitar duplicatas.
-* **Historicidade:** Tabelas de fato usam `UNIQUE KEY` no contexto + data (ex: `uq_hero_rank_win_snapshot (hero_id, rank_id, date_of_the_data)`).
-* **Views `_latest`:** Para cada tabela de fato, existe uma view (`vw_hero_win_latest`, etc.) que usa `ROW_NUMBER()` para exibir *apenas* o registro mais recente para cada contexto, otimizando as consultas do frontend.
-
-<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
-
----
-
-### 🗺️ Próximos Passos (Roadmap)
-
--   [ ] **Desenvolvimento do Frontend (Fase Atual):**
-    * **Objetivo:** Implementar dashboards interativos (Renderização no Cliente).
-    * **Ação:** Atualizar o `frontend/src/services/api_manager.js` para consumir o novo endpoint `POST /API/V1-DATA/analysis/query`.
-    * **Ação:** Atualizar o `frontend/src/App.jsx` para usar a biblioteca **Recharts** para renderizar gráficos (ex: gráfico de linha) com os dados JSON recebidos.
--   [ ] **Refatoração do Extrator (Backend/ETL):**
-    * **Objetivo:** Tornar a extração de dados resiliente a falhas da API da Blizzard.
-    * **Ação:** Implementar a lógica de "Teste A/B" no `info_stats_lvl3_extractor.py` para validar os dados contra "falhas silenciosas" (conforme discutido).
--   [ ] **Refatoração de Dimensões (Backend/DB):**
-    * **Objetivo:** Transformar os filtros fixos (`region=Americas`) em dimensões dinâmicas.
--   [ ] **Adicionar Análise Contextual (A Fazer):**
-    * **Objetivo:** Justificar as estatísticas com informações qualitativas (ex: "Genji fraco no Bronze...").
--   [ ] **Ativação da Segurança em Produção:** Ativar e configurar o `Rate Limiting`. Ajustar as origens do `CORSMiddleware`.
--   [ ] **Testes:** Implementar testes unitários e de integração.
--   [ ] **Deployment:** Configurar o deploy da API e do banco de dados.
-
-<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
-
----
-
-### 📄 Licença
-
-Distribuído sob a Licença MIT. Veja `LICENSE` para mais informações.
-
-<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
-
----
-
-### 📫 Contato
-
-Hiago Anastacio - hiagoanastacios@gmail.com
-
-Link do Projeto: [https://github.com/HiagoAnastacio/Projeto-ADS2](https://github.com/HiagoAnastacio/Projeto-ADS2)
-
-<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
+Esse projeto está sob licença. Veja o arquivo [LICENÇA](LICENSE) para mais detalhes.

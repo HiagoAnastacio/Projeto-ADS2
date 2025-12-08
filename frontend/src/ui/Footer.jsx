@@ -29,7 +29,7 @@ const Footer = () => {
                         </p>
                         <div className="flex items-center text-sm text-gray-500">
                             <Calendar className="h-4 w-4 mr-1 text-orange-500" />
-                            <span>Dados atualizados semanalmente (Terças-feiras)</span>
+                            <span>Dados atualizados semanalmente (Segundas-feiras)</span>
                         </div>
                     </div>
 

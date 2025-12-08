@@ -3,37 +3,19 @@
  *
  * Componente de Gráfico de Linha para Taxa de Escolha (Pick Rate).
  *
- * RAZÃO DE EXISTIR:
- * - Visualizar graficamente a popularidade (Pick Rate) dos heróis ao longo do tempo.
- * - Permitir a comparação de popularidade entre múltiplos heróis.
- * - Complementar a análise de Win Rate, mostrando se um herói é "meta" (muito escolhido) ou "nicho".
- *
- * POSIÇÃO NO FLUXO DE DADOS:
- * 1. Recebe dados brutos (`data`) e metadados (`heroes`) do componente pai (`AnalysisSection`).
- * 2. Processa os dados brutos de Pick Rate (similar ao WinRateChart).
- * 3. Renderiza o gráfico interativo usando a biblioteca Recharts.
+ * REVISÃO FASE 2.4 (Highlight & Dimming):
+ * - Adicionado suporte a `hoveredHero` para Highlight sincronizado.
+ * - Efeito de "Dimming": Reduz opacidade de linhas não selecionadas.
+ * - Interatividade na Legenda.
  */
 
-// Importa componentes da biblioteca Recharts
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-// Importa utilitário de log para debug
 import ChartLogger from '../../utils/ChartLogger';
 
-/**
- * Componente PickRateChart
- * 
- * @param {Array} data - Dados brutos da API (lista de registros de pick_rate)
- * @param {Array} heroes - Lista de metadados dos heróis (para resolver nomes via ID)
- */
-const PickRateChart = ({ data, heroes }) => {
-    // 1. Log de Recebimento para debug
+const PickRateChart = ({ data, heroes, hoveredHero, setHoveredHero }) => {
     ChartLogger.logReceive('PickRateChart', data);
 
-    // Validação de dados vazios ou nulos
     if (!data || data.length === 0) {
-        // Loga o motivo da renderização vazia
-        ChartLogger.logRender('PickRateChart', 'RENDER_EMPTY', 'Dados nulos ou vazios.');
-        // Retorna componente visual de "Sem Dados"
         return (
             <div className="h-full flex items-center justify-center bg-gray-50 rounded-xl border border-dashed border-gray-300">
                 <p className="text-gray-500">Sem dados de Pick Rate para exibir.</p>
@@ -41,161 +23,122 @@ const PickRateChart = ({ data, heroes }) => {
         );
     }
 
-    // Variáveis de estado local para renderização do gráfico
     let chartData = [];
     let lines = [];
 
     try {
-        // Identifica IDs únicos para determinar se é multi-linha
         const uniqueHeroIds = [...new Set(data.map(d => d.hero_id))].filter(id => id !== undefined && id !== null);
         const isMultiLine = uniqueHeroIds.length > 1;
 
         if (isMultiLine) {
-            // --- Modo Multi-Linha (Vários Heróis) ---
-
-            // Agrupamento por data (Pivot Table)
             const groupedByDate = {};
-
-            // Itera sobre os dados brutos
             data.forEach(item => {
                 const dateKey = item.date_of_the_data;
-                // Inicializa o objeto da data se não existir
                 if (!groupedByDate[dateKey]) {
                     groupedByDate[dateKey] = {
                         date_of_the_data: dateKey,
                         formattedDate: new Date(dateKey).toLocaleDateString()
                     };
                 }
-
-                // Tratamento numérico (garante float)
                 let val = item.pick_rate;
+                // Pick Rate geralmente é número pequeno, formatar corretamente
                 if (typeof val === 'string') val = parseFloat(val.replace(',', '.'));
                 if (isNaN(val)) val = 0;
-
-                // Chave composta pelo ID do herói para o Recharts
-                const dataKey = `hero_${item.hero_id}`;
-                groupedByDate[dateKey][dataKey] = val;
+                groupedByDate[dateKey][`hero_${item.hero_id}`] = val;
             });
 
-            // Ordenação cronológica dos dados agrupados
             chartData = Object.values(groupedByDate).sort((a, b) => new Date(a.date_of_the_data) - new Date(b.date_of_the_data));
+            const colors = ["#f97316", "#3b82f6", "#10b981", "#ef4444", "#8b5cf6", "#ec4899", "#f59e0b", "#6366f1"];
 
-            // Cores distintas para as linhas (mesma paleta do WinRate para consistência visual)
-            const colors = ["#3b82f6", "#f97316", "#10b981", "#ef4444", "#8b5cf6", "#ec4899", "#f59e0b", "#6366f1"];
-
-            // Mapeia os IDs para objetos de configuração de linha
             lines = uniqueHeroIds.map((heroId, index) => {
-                // Busca nome do herói
                 const heroObj = heroes ? heroes.find(h => h.hero_id === heroId) : null;
                 const heroName = heroObj ? heroObj.hero_name : `Herói ${heroId}`;
-
                 return {
                     dataKey: `hero_${heroId}`,
                     color: colors[index % colors.length],
                     name: heroName
                 };
             });
-
         } else {
-            // --- Modo Linha Única (Um Herói ou Agregado) ---
-
-            // Mapeamento direto dos dados
             chartData = data.map(item => {
                 const dateObj = new Date(item.date_of_the_data);
                 let val = item.pick_rate;
                 if (typeof val === 'string') val = parseFloat(val.replace(',', '.'));
-
                 return {
                     ...item,
                     formattedDate: !isNaN(dateObj.getTime()) ? dateObj.toLocaleDateString() : (item.date_of_the_data || 'N/A'),
                     pick_rate: isNaN(val) ? 0 : val
                 };
             });
-
-            // Configuração de linha única (cor azul padrão para Pick Rate)
             lines = [{ dataKey: 'pick_rate', color: '#3b82f6', name: 'Pick Rate' }];
         }
-
-        // Loga o resultado do processamento
-        ChartLogger.logProcess('PickRateChart', chartData);
-
     } catch (err) {
-        // Tratamento de erro fatal no processamento
-        console.error("Erro fatal ao formatar dados do gráfico:", err);
-        ChartLogger.logRender('PickRateChart', 'RENDER_ERROR', err.message);
-        return (
-            <div className="h-full flex items-center justify-center bg-red-50 rounded-xl border border-red-200">
-                <p className="text-red-500">Erro ao processar dados do gráfico.</p>
-            </div>
-        );
+        console.error("Erro chart:", err);
+        return <div className="h-full flex items-center justify-center bg-red-50 text-red-500">Erro ao processar gráfico.</div>;
     }
 
-    // Verificação pós-processamento
-    if (chartData.length === 0) {
-        ChartLogger.logRender('PickRateChart', 'RENDER_EMPTY', 'Nenhum dado válido após processamento.');
-        return (
-            <div className="h-full flex items-center justify-center bg-yellow-50 rounded-xl border border-yellow-200">
-                <p className="text-yellow-600">Dados recebidos mas inválidos para exibição.</p>
-            </div>
-        );
-    }
+    if (chartData.length === 0) return <div className="h-full flex items-center justify-center bg-yellow-50 text-yellow-600">Dados inválidos.</div>;
 
-    // Loga sucesso na renderização
-    ChartLogger.logRender('PickRateChart', 'RENDER_CHART', `Renderizando ${chartData.length} pontos com ${lines.length} linhas.`);
+    // Handler de Mouse
+    const handleMouseEnter = (o) => {
+        const { name } = o;
+        if (setHoveredHero) setHoveredHero(name);
+    };
+    const handleMouseLeave = () => {
+        if (setHoveredHero) setHoveredHero(null);
+    };
 
-    // --- Renderização do Gráfico ---
     return (
         <div className="w-full h-full">
             <ResponsiveContainer width="100%" height="100%" debounce={50}>
-                <LineChart data={chartData}>
-                    {/* Grade de fundo */}
+                <LineChart data={chartData} onMouseLeave={handleMouseLeave}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                    <XAxis dataKey="formattedDate" tick={{ fontSize: 12, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 12, fill: '#9ca3af' }} axisLine={false} tickLine={false} unit="%" domain={['auto', 'auto']} />
 
-                    {/* Eixo X (Datas) */}
-                    <XAxis
-                        dataKey="formattedDate"
-                        tick={{ fontSize: 12, fill: '#9ca3af' }}
-                        axisLine={false}
-                        tickLine={false}
-                    />
-
-                    {/* Eixo Y (Porcentagem) */}
-                    <YAxis
-                        tick={{ fontSize: 12, fill: '#9ca3af' }}
-                        axisLine={false}
-                        tickLine={false}
-                        unit="%"
-                        domain={['auto', 'auto']}
-                    />
-
-                    {/* Tooltip */}
                     <Tooltip
                         contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                        itemStyle={{ color: '#1f2937' }}
                         itemSorter={(item) => -item.value}
                     />
 
-                    {/* Legenda */}
-                    {lines.length <= 12 && <Legend />}
-
-                    {/* Linhas */}
-                    {lines.map(line => (
-                        <Line
-                            key={line.dataKey}
-                            type="monotone"
-                            dataKey={line.dataKey}
-                            name={line.name}
-                            stroke={line.color}
-                            strokeWidth={3}
-                            dot={{ r: 4, fill: line.color, strokeWidth: 2, stroke: '#fff' }}
-                            activeDot={{ r: 6 }}
+                    {lines.length <= 40 && (
+                        <Legend
+                            onMouseEnter={handleMouseEnter}
+                            onMouseLeave={handleMouseLeave}
+                            wrapperStyle={{ paddingTop: '10px' }}
                         />
-                    ))}
+                    )}
+
+                    {lines.map(line => {
+                        const isDimmed = hoveredHero && hoveredHero !== line.name;
+                        const opacity = isDimmed ? 0.1 : 1;
+                        const strokeWidth = hoveredHero === line.name ? 4 : 3;
+
+                        return (
+                            <Line
+                                key={line.dataKey}
+                                type="monotone"
+                                dataKey={line.dataKey}
+                                name={line.name}
+                                stroke={line.color}
+                                strokeWidth={strokeWidth}
+                                strokeOpacity={opacity}
+                                dot={{ r: 4, fill: line.color, strokeWidth: 2, stroke: '#fff', strokeOpacity: opacity }}
+                                activeDot={{ r: 6, strokeOpacity: 1 }}
+                                onMouseEnter={(e) => {
+                                    if (setHoveredHero) setHoveredHero(line.name);
+                                }}
+                                onMouseLeave={() => {
+                                    if (setHoveredHero) setHoveredHero(null);
+                                }}
+                                isAnimationActive={false}
+                            />
+                        );
+                    })}
                 </LineChart>
             </ResponsiveContainer>
         </div>
     );
 };
 
-// Exporta o componente
 export default PickRateChart;
