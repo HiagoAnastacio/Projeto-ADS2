@@ -64,7 +64,7 @@ O **Overwatch Meta Analyzer** é uma ferramenta desenvolvida para transformar da
 
 ## 🤝 Contribuição
 
-Este é um projeto acadêmico (ADS - Senac). Sugestões via Issues são bem-vindas!
+Este é um projeto acadêmico (ADS - Senai). Sugestões via Issues são bem-vindas!
 
 ---
-*Desenvolvido pela Equipe do Projeto ADS2*
+*Desenvolvido pela "Equipe de um Dev" do Projeto ADS2*
