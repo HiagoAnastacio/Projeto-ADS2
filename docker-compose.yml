@@ -1,21 +1,48 @@
 version: '3.8'
 
 services:
+  # --- Reverse Proxy (Traefik) ---
+  traefik:
+    image: traefik:v2.10
+    restart: always
+    command:
+      # Habilita o Dashboard (opcional, inseguro em prod se não protegido, deixamos sem por enquanto)
+      #- "--api.insecure=true"
+      # Providers
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      # Entrypoints (Portas de entrada)
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      # Redirecionamento Global HTTP -> HTTPS
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      # Certificate Resolver (Let's Encrypt)
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      #- "--certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory" # DESCOMENTE PARA TESTES (evita rate limit)
+      - "--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      # - "8080:8080" # Dashboard
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt" # Volume persistente para certificados
+
   # --- Serviço de Banco de Dados (MySQL) ---
   db:
     image: mysql:8.0
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: overwatch_meta_analyzer
-      MYSQL_USER: meta_user
-      MYSQL_PASSWORD: meta_password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
-      - "3308:3306" # Exposta na 3308 (Evitando conflito na 3306 e 3307)
+      - "3308:3306" # Mantido na 3308 para acesso externo debugging
     volumes:
-      # Persistência de dados
       - mysql_data:/var/lib/mysql
-      # Script de inicialização (Importa o dump automaticamente no primeiro boot)
       - ./backend/data/database.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
@@ -29,16 +56,21 @@ services:
       dockerfile: Dockerfile
     restart: always
     environment:
-      # Conexão DB
-      DB_HOST: db # Nome do serviço acima
-      DB_USER: root # Usando root para garantir permissões totais no init, ou meta_user
-      DB_PSWD: rootpassword
-      DB_NAME: overwatch_meta_analyzer
-    ports:
-      - "8000:8000"
+      DB_HOST: db
+      DB_USER: root # Mantemos root para garantir (ou usamos ${MYSQL_USER})
+      DB_PSWD: ${MYSQL_ROOT_PASSWORD} # Ou ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
     depends_on:
       db:
         condition: service_healthy
+    # Labels para o Traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`www.${DOMAIN_NAME}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=myresolver"
+      # Importante: Informar a porta interna do container
+      - "traefik.http.services.backend.loadbalancer.server.port=8000"
 
   # --- Frontend (React + Nginx Proxy) ---
   frontend:
@@ -46,10 +78,16 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     restart: always
-    ports:
-      - "80:80" # Acessível em http://localhost
     depends_on:
       - backend
+    # Labels para o Traefik
+    labels:
+      - "traefik.enable=true"
+      # Captura tudo no dominio raiz (exceto /api que o backend pega pela especificidade)
+      - "traefik.http.routers.frontend.rule=Host(`www.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
 
 volumes:
   mysql_data:

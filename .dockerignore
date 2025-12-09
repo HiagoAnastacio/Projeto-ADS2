@@ -1,0 +1,24 @@
+# Ignora versionamento git
+.git
+.gitignore
+
+# Ignora dependências locais e ambientes virtuais
+node_modules
+.venv
+venv
+__pycache__
+
+# Ignora arquivos de ambiente com SEGREDOS
+.env
+.env.*
+
+# Ignora docker-compose (não precisa estar dentro da imagem)
+docker-compose.yml
+
+# Ignora dados do banco mapeados localmente
+mysql_data
+
+# Ignora documentação e arquivos soltos
+README.md
+implementation_plan.md
+task.md

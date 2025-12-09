@@ -2,8 +2,8 @@
 
 > Uma plataforma de análise de dados avançada para Overwatch 2, focado em visualização de tendências de meta, taxas de vitória e escolha de heróis através de patchs.
 
-![Status do Projeto](https://img.shields.io/badge/Status-Em_Desenvolvimento-yellow)
-![Versão](https://img.shields.io/badge/Versão-0.8.0-blue)
+![Status do Projeto](https://img.shields.io/badge/Status-Concluído-brightgreen)
+![Versão](https://img.shields.io/badge/Versão-1.0.0-blue)
 
 ## 📋 Sobre o Projeto
 
@@ -61,6 +61,30 @@ O **Overwatch Meta Analyzer** é uma ferramenta desenvolvida para transformar da
    ```
 
 4. **Acesse**: `http://localhost:5173`
+
+## ☁️ Deploy em Produção (Docker)
+
+Para colocar a aplicação no ar em um servidor VPS (DigitalOcean, AWS, etc) com HTTPS e Domínio:
+
+1.  **Pré-requisitos no Servidor:**
+    *   Docker e Docker Compose instalados.
+    *   Domínio (ex: `overwatchmetaanalyzer.com`) apontado para o IP do servidor (DNS A Record).
+
+2.  **Configuração:**
+    *   Copie os arquivos do projeto para o servidor.
+    *   Renomeie o arquivo `.env.example` para `.env` e edite com suas senhas reais:
+        ```bash
+        cp .env.example .env
+        nano .env
+        ```
+
+3.  **Execução:**
+    Dentro da pasta do projeto no servidor:
+    ```bash
+    docker-compose up -d --build
+    ```
+
+4.  **Acesse**: `https://www.overwatchmetaanalyzer.com` (O certificado SSL será gerado automaticamente em alguns instantes).
 
 ## 🤝 Contribuição
 

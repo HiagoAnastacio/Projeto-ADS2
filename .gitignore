@@ -76,3 +76,18 @@ lerna-debug.log*
 
 # Ignora a pasta content
 /content
+
+# ==================================
+# SEGURANÇA E DOCKER (ADICIONADO)
+# ==================================
+
+# Ignora o arquivo de variáveis de ambiente na RAIZ do projeto.
+# CRÍTICO: Contém as credenciais de produção do Docker Compose.
+.env
+
+# Ignora a pasta de certificados do Let's Encrypt (gerada pelo Traefik)
+letsencrypt/
+
+# Ignora banco de dados SQLite ou dumps locais (se houver)
+*.db
+*.sqlite3
