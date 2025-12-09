@@ -72,16 +72,16 @@ const AnalysisSection = () => {
 
     // Menu de Mapas: Inclui opção "Todos" (null) + lista de mapas
     const mapItems = useMemo(() => [{ label: 'Todos os Mapas', id: null, action: () => handleFilterChange('map_id', null) }, ...maps.map(m => ({ label: m.map_name, id: m.map_id, action: () => handleFilterChange('map_id', m.map_id) }))], [maps]);
-    
+
     // Menu de Ranks: Inclui opção "Todos" (null) + lista de ranks
     const rankItems = useMemo(() => [{ label: 'Todos os Ranks', id: null, action: () => handleFilterChange('rank_id', null) }, ...ranks.map(r => ({ label: r.rank_name || r.rank, id: r.rank_id, action: () => handleFilterChange('rank_id', r.rank_id) }))], [ranks]);
-    
+
     // Menu de Funções (Roles): Inclui opção "Todas" (null) + lista de roles
     const roleItems = useMemo(() => [{ label: 'Todas as Funções', id: null, action: () => handleFilterChange('role_id', null) }, ...roles.map(r => ({ label: r.role_name || r.role, id: r.role_id, action: () => handleFilterChange('role_id', r.role_id) }))], [roles]);
-    
+
     // Menu de Modos de Jogo: Inclui opção "Todos" (null) + lista de modos
     const modeItems = useMemo(() => [{ label: 'Todos os Modos', id: null, action: () => handleFilterChange('game_mode_id', null) }, ...gameModes.map(g => ({ label: g.game_mode_name, id: g.game_mode_id, action: () => handleFilterChange('game_mode_id', g.game_mode_id) }))], [gameModes]);
-    
+
     // Lista simples de heróis para o componente MultiSelect
     const heroItemsForMulti = useMemo(() => heroes.map(h => ({ label: h.hero_name, id: h.hero_id })), [heroes]);
 
@@ -113,11 +113,11 @@ const AnalysisSection = () => {
     const debouncedFilters = useDebounce(filters, 800);
 
     // --- Handlers de Interação do Usuário ---
-    
+
     // Handler para alteração na seleção múltipla de heróis
     const handleHeroesChange = (selectedIds) => {
-        setFilters(prev => ({ 
-            ...prev, 
+        setFilters(prev => ({
+            ...prev,
             hero_ids: selectedIds,
             role_id: null // Regra de Negócio: Se selecionar heróis específicos, o filtro de Role (grupo) é desativado.
         }));
@@ -163,10 +163,10 @@ const AnalysisSection = () => {
             setLoading(true);
             try {
                 const { hero_ids, map_id, rank_id, role_id, game_mode_id, start_date, end_date } = debouncedFilters;
-                
+
                 // Verifica se está no "Estado Padrão" (sem filtros)
                 const isDefault = hero_ids.length === 0 && !map_id && !rank_id && !role_id && !game_mode_id && !start_date && !end_date;
-                
+
                 const sortAsc = (a, b) => new Date(a.date_of_the_data) - new Date(b.date_of_the_data);
 
                 let winRes, pickRes;
@@ -177,7 +177,7 @@ const AnalysisSection = () => {
                     const [latestWin, latestPick, histWin, histPick] = await Promise.all([
                         fetchAnalytics({ table_name: 'vw_hero_win_latest', limit: 100 }),
                         fetchAnalytics({ table_name: 'vw_hero_pick_latest', limit: 100 }),
-                        fetchAnalytics({ table_name: 'hero_win', limit: 600 }), 
+                        fetchAnalytics({ table_name: 'hero_win', limit: 600 }),
                         fetchAnalytics({ table_name: 'hero_pick', limit: 600 })
                     ]);
                     winRes = (histWin || []).sort(sortAsc);
@@ -194,14 +194,14 @@ const AnalysisSection = () => {
                     if (map_id) filtersEqual.map_id = map_id;
                     if (rank_id) filtersEqual.rank_id = rank_id;
                     if (game_mode_id) filtersEqual.game_mode_id = game_mode_id;
-                    
+
                     if (hero_ids.length > 0) {
                         filtersIn.hero_id = hero_ids;
                     } else if (role_id) {
-                         // Transforma Role ID em Lista de Hero IDs (Backend não filtra direto por role nas tabelas de fato)
-                         const heroesInRole = heroes.filter(h => h.role_id === role_id).map(h => h.hero_id);
-                         if (heroesInRole.length > 0) filtersIn.hero_id = heroesInRole;
-                         else { setTableData([]); setLoading(false); return; }
+                        // Transforma Role ID em Lista de Hero IDs (Backend não filtra direto por role nas tabelas de fato)
+                        const heroesInRole = heroes.filter(h => h.role_id === role_id).map(h => h.hero_id);
+                        if (heroesInRole.length > 0) filtersIn.hero_id = heroesInRole;
+                        else { setTableData([]); setLoading(false); return; }
                     }
 
                     const queryParams = { filters_equal: filtersEqual, filters_in: filtersIn, limit: 400 };
@@ -210,8 +210,8 @@ const AnalysisSection = () => {
 
                     // 3. Executa as queries em paralelo
                     const [resW, resP] = await Promise.all([
-                         fetchAnalytics({ table_name: winTable, ...queryParams }),
-                         fetchAnalytics({ table_name: pickTable, ...queryParams })
+                        fetchAnalytics({ table_name: winTable, ...queryParams }),
+                        fetchAnalytics({ table_name: pickTable, ...queryParams })
                     ]);
                     winRes = (resW || []).sort(sortAsc);
                     pickRes = (resP || []).sort(sortAsc);
@@ -246,7 +246,7 @@ const AnalysisSection = () => {
         // Cria Map de Pick Rate para acesso O(1)
         const pickMap = new Map();
         if (pickData) pickData.forEach(p => pickMap.set(`${p.hero_id}-${p.date_of_the_data}`, p.pick_rate));
-        
+
         return winData.map(item => {
             const hero = heroes.find(h => h.hero_id === item.hero_id);
             const map = maps.find(m => m.map_id === item.map_id);
@@ -272,15 +272,15 @@ const AnalysisSection = () => {
     const dateItems = useMemo(() => {
         const items = availableDates.map(dateStr => {
             const fmt = new Date(dateStr).toLocaleDateString('pt-BR');
-            return { label: fmt, id: dateStr }; 
+            return { label: fmt, id: dateStr };
         });
         return [{ label: 'Qualquer Data', id: null }, ...items];
     }, [availableDates]);
 
     return (
-        <section 
-            id="analysis-section" 
-            className="scroll-mt-28 w-full max-w-[95%] mx-auto mt-8 mb-16 bg-white rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.08)] relative overflow-visible ring-1 ring-slate-100 pb-12"
+        <section
+            id="analysis-section"
+            className="scroll-mt-28 w-full max-w-[95%] mx-auto mt-8 mb-16 bg-white rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.08)] relative overflow-visible ring-1 ring-slate-100 pb-12 transition-colors duration-300"
         >
             {/* 
                --- CÁPSULA FLUTUANTE DE FILTROS --- 
@@ -288,26 +288,26 @@ const AnalysisSection = () => {
                Desktop (lg+): 'sticky top-20' (acompanha o scroll para fácil acesso).
                Estilo 'Box Shadow' e 'Border Radius' criam o efeito de cartão flutuante.
             */}
-            <div className="relative lg:sticky lg:top-20 z-50 flex justify-center pt-8 pb-4 pointer-events-none"> 
-                <div className="pointer-events-auto bg-white/95 backdrop-blur-xl border border-gray-200 shadow-xl rounded-[2.5rem] px-4 md:px-8 py-5 flex flex-col items-center gap-4 transition-all hover:shadow-2xl hover:border-emerald-200/50 w-full max-w-5xl mx-4">
-                        
+            <div className="relative lg:sticky lg:top-[15vh] z-50 flex justify-center pt-8 pb-4 pointer-events-none">
+                <div className="pointer-events-auto bg-white/95 backdrop-blur-xl border border-gray-200 shadow-xl rounded-[2.5rem] px-4 md:px-8 py-5 flex flex-col items-center gap-4 transition-all hover:shadow-2xl hover:border-primary-200/50 w-full max-w-5xl mx-4">
+
                     {/* Linha 1: Filtros de Linguagem Natural 
                        Usa flex-wrap para quebrar linha graciosamente em telas menores.
                     */}
-                    <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-3 text-lg md:text-xl text-slate-500 font-light text-center">
-                        <Search className="w-5 h-5 text-emerald-500 mr-1" />
+                    <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-3 text-lg md:text-xl text-slate-500 font-light text-center transition-colors">
+                        <Search className="w-5 h-5 text-primary-500 mr-1" />
                         <span>Analisar</span>
-                        
+
                         {/* SELEÇÃO DE HERÓIS INTELIGENTE:
                            - Se nao tem role, pode escolher heróis avulsos.
                            - Se escolhe role, o multi-select some e vira um dropdown de role.
                         */}
                         {filters.role_id === null && (
                             <div className="relative z-50">
-                                <MultiSelectDropdown 
-                                    label="Todos os Heróis" 
-                                    items={heroItemsForMulti} 
-                                    selectedIds={filters.hero_ids} 
+                                <MultiSelectDropdown
+                                    label="Todos os Heróis"
+                                    items={heroItemsForMulti}
+                                    selectedIds={filters.hero_ids}
                                     onChange={handleHeroesChange}
                                     variant="text"
                                 />
@@ -317,12 +317,12 @@ const AnalysisSection = () => {
                         {filters.hero_ids.length === 0 && (
                             <>
                                 {filters.role_id === null && <span className="text-sm text-gray-300 mx-1">ou</span>}
-                                
+
                                 <div className="relative group z-40">
-                                    <Dropdown 
-                                        label={currentLabels.role} 
-                                        items={roleItems} 
-                                        variant="text" 
+                                    <Dropdown
+                                        label={currentLabels.role}
+                                        items={roleItems}
+                                        variant="text"
                                     />
                                 </div>
                             </>
@@ -335,7 +335,7 @@ const AnalysisSection = () => {
                                 <Dropdown label={currentLabels.map} items={mapItems} variant="text" />
                             </div>
                         )}
-                        
+
                         {filters.map_id === null && (
                             <>
                                 {filters.game_mode_id === null && <span className="text-sm text-gray-300 mx-1">ou</span>}
@@ -354,18 +354,18 @@ const AnalysisSection = () => {
                     {/* Linha 2: Seletor de Intervalo de Datas/Patches */}
                     <div className="flex flex-wrap justify-center items-center gap-3 w-full border-t border-gray-100 pt-3 mt-1 px-4">
                         <span className="text-xs text-slate-400 font-bold uppercase tracking-wider flex items-center bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
-                            <CalendarIcon className="w-3 h-3 mr-2 text-emerald-500" /> Patch / Data
+                            <CalendarIcon className="w-3 h-3 mr-2 text-primary-500" /> Patch / Data
                         </span>
-                        
+
                         <div className="flex items-center gap-2">
-                             <Dropdown 
-                                label={filters.start_date ? new Date(filters.start_date).toLocaleDateString('pt-BR') : 'Início'} 
+                            <Dropdown
+                                label={filters.start_date ? new Date(filters.start_date).toLocaleDateString('pt-BR') : 'Início'}
                                 items={dateItems.map(i => ({ ...i, action: () => handleDateSelect('start_date', i) }))}
                                 variant="standard"
                                 className="w-32 md:w-36" // Largura responsiva
                             />
                             <span className="text-slate-300"><ChevronRight className="w-4 h-4" /></span>
-                            <Dropdown 
+                            <Dropdown
                                 label={filters.end_date ? new Date(filters.end_date).toLocaleDateString('pt-BR') : 'Fim'}
                                 items={dateItems.map(i => ({ ...i, action: () => handleDateSelect('end_date', i) }))}
                                 variant="standard"
@@ -380,11 +380,11 @@ const AnalysisSection = () => {
             {/* Conteúdo Principal (Gráficos e Tabela) */}
             <div className="max-w-7xl mx-auto px-4 md:px-10 pt-4">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                     <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                         <h3 className="text-lg font-bold text-slate-800 mb-4">Tendência de Win Rate</h3>
                         <div className="h-[40vh] min-h-[350px] w-full">
-                            <WinRateChart 
-                                data={chartWinData} 
+                            <WinRateChart
+                                data={chartWinData}
                                 heroes={heroes}
                                 hoveredHero={hoveredHero}
                                 setHoveredHero={setHoveredHero}
@@ -394,9 +394,9 @@ const AnalysisSection = () => {
                     <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                         <h3 className="text-lg font-bold text-slate-800 mb-4">Tendência de Pick Rate</h3>
                         <div className="h-[40vh] min-h-[350px] w-full">
-                            <PickRateChart 
-                                data={chartPickData} 
-                                heroes={heroes} 
+                            <PickRateChart
+                                data={chartPickData}
+                                heroes={heroes}
                                 hoveredHero={hoveredHero}
                                 setHoveredHero={setHoveredHero}
                             />
@@ -409,7 +409,7 @@ const AnalysisSection = () => {
                     {loading && (
                         <div className="absolute inset-0 flex items-start justify-center pt-60 z-50">
                             <div className="bg-white px-6 py-3 rounded-full shadow-lg border border-gray-100 flex items-center gap-3">
-                                <Loader2 className="animate-spin text-emerald-600" />
+                                <Loader2 className="animate-spin text-primary-600" />
                                 <span className="text-slate-600 font-medium">Atualizando dados...</span>
                             </div>
                         </div>

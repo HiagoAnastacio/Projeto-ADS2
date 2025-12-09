@@ -143,7 +143,7 @@ const WinRateChart = ({ data, heroes, hoveredHero, setHoveredHero }) => {
     return (
         <div className="w-full h-full">
             <ResponsiveContainer width="100%" height="100%" debounce={50}>
-                <LineChart data={chartData} onMouseLeave={() => setHoveredHero && setHoveredHero(null)}>
+                <LineChart data={chartData} syncId="heroAnalytics" onMouseLeave={() => setHoveredHero && setHoveredHero(null)}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                     <XAxis dataKey="formattedDate" tick={{ fontSize: 12, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 12, fill: '#9ca3af' }} axisLine={false} tickLine={false} unit="%" domain={['auto', 'auto']} />

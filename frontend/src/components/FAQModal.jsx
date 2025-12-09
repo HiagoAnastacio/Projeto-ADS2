@@ -96,8 +96,8 @@ const FAQModal = ({ isOpen, onClose }) => {
                                     </div>
 
                                     {/* Nova Seção: Sobre o Projeto */}
-                                    <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
-                                        <p className="font-bold text-emerald-900 text-sm mb-1">Sobre o Projeto</p>
+                                    <div className="bg-primary-50/50 p-4 rounded-xl border border-primary-100">
+                                        <p className="font-bold text-primary-900 text-sm mb-1">Sobre o Projeto</p>
                                         <p className="text-sm text-slate-600 leading-relaxed">
                                             Este sistema foi desenvolvido integralmente por um único desenvolvedor como parte de um <strong>Trabalho de Conclusão de Curso (TCC)</strong>.
                                             <br className="mb-2" />

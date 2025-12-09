@@ -55,23 +55,24 @@ const Header = () => {
         // Container principal do cabeçalho
         // 'fixed top-0': Mantém o header fixo no topo da tela durante a rolagem
         // 'z-50': Garante que fique acima de outros elementos
-        <header className="bg-white shadow-sm fixed top-0 w-full z-50">
+        <header className="bg-white shadow-sm fixed top-0 w-full z-50 h-[13.5vh] transition-[height] duration-300">
 
-            {/* Container centralizado com largura máxima */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between h-16">
+            {/* Container principal do cabeçalho */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+                <div className="flex justify-between items-center h-full">
 
-                    {/* --- Logo e Título --- */}
-                    <div className="flex items-center">
+                    {/* Logo e Título */}
+                    <div className="flex items-center h-full py-1">
                         {/* Botão que rola para o topo ao clicar no logo */}
                         <button
                             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                            className="flex-shrink-0 flex items-center text-orange-600 cursor-pointer hover:opacity-80 transition-opacity"
+                            className="flex-shrink-0 flex items-center cursor-pointer hover:opacity-80 transition-opacity h-full"
                         >
-                            {/* Ícone do Logo */}
-                            <BarChart2 className="h-8 w-8 mr-2" />
-                            {/* Nome da Aplicação com destaque de cor */}
-                            <span className="font-bold text-xl tracking-tight text-gray-900">Overwatch<span className="text-orange-600">MetaAnalyzer</span></span>
+                            <img
+                                src="/logo_pagina.png"
+                                alt="Overwatch MetaAnalyzer"
+                                className="h-[80%] w-auto object-contain"
+                            />
                         </button>
                     </div>
 

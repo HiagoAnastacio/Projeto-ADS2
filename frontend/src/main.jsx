@@ -18,7 +18,6 @@ import App from './App.jsx'
 createRoot(document.getElementById('root')).render(
   // Envolve a aplicação no StrictMode para verificações adicionais durante o desenvolvimento
   <StrictMode>
-    {/* Renderiza o componente principal App */}
     <App />
   </StrictMode>,
 )

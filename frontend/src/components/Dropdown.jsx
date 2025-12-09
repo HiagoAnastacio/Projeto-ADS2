@@ -17,8 +17,8 @@ const Dropdown = ({ label, items, onSelect, className = "", variant = "standard"
 
     // Estilos baseados na variante
     const buttonStyles = variant === "text"
-        ? "inline-flex items-center font-bold text-slate-900 border-b-2 border-emerald-500/30 hover:border-emerald-500 hover:bg-emerald-50/50 px-1 transition-all cursor-pointer"
-        : "inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors";
+        ? "inline-flex items-center font-bold text-slate-900 border-b-2 border-primary-500/30 hover:border-primary-500 hover:bg-primary-50 px-1 transition-all cursor-pointer"
+        : "inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors";
 
     return (
         <div className={`relative inline-block text-left ${className}`} ref={dropdownRef}>
@@ -42,7 +42,7 @@ const Dropdown = ({ label, items, onSelect, className = "", variant = "standard"
                         {items.map((item, index) => (
                             <button
                                 key={index}
-                                className="text-slate-600 block w-full text-left px-4 py-3 text-sm hover:bg-emerald-50 hover:text-emerald-700 transition-colors border-b border-gray-50 last:border-0"
+                                className="text-slate-600 block w-full text-left px-4 py-3 text-sm hover:bg-primary-50 hover:text-primary-700 transition-colors border-b border-gray-50 last:border-0"
                                 role="menuitem"
                                 onClick={() => {
                                     if (item.action) item.action();

@@ -81,8 +81,8 @@ const MultiSelectDropdown = ({ label, items, selectedIds = [], onChange, classNa
 
     // Definição de estilos baseados na variante escolhida
     const buttonStyles = variant === "text"
-        ? "inline-flex items-center font-bold text-slate-900 border-b-2 border-emerald-500/30 hover:border-emerald-500 hover:bg-emerald-50/50 px-1 transition-all cursor-pointer truncate max-w-[300px]"
-        : "inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors";
+        ? "inline-flex items-center font-bold text-slate-900 border-b-2 border-primary-500/30 hover:border-primary-500 hover:bg-primary-50 px-1 transition-all cursor-pointer truncate max-w-[300px]"
+        : "inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors";
 
     return (
         <div className={`relative inline-block text-left ${className}`} ref={dropdownRef}>

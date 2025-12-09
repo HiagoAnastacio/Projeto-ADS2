@@ -124,7 +124,7 @@ const Table = memo(({ data }) => {
         if (col === 'Win Rate (%)') {
             const num = parseNum(value);
             let color = "bg-slate-100 text-slate-600";
-            if (num >= 52) color = "bg-emerald-100 text-emerald-700";
+            if (num >= 52) color = "bg-primary-100 text-primary-700";
             if (num <= 48) color = "bg-rose-100 text-rose-700";
             return <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${color}`}>{num.toFixed(2)}%</span>;
         }

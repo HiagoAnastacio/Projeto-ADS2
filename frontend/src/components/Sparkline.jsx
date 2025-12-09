@@ -7,7 +7,7 @@
  */
 
 // Importa componentes do Recharts para desenhar o gráfico
-import { Line, LineChart, ResponsiveContainer } from 'recharts';
+import { Line, LineChart, ResponsiveContainer, YAxis } from 'recharts';
 // Importa logger (opcional, usado para debug se descomentado)
 import ChartLogger from '../utils/ChartLogger';
 
@@ -44,6 +44,7 @@ const Sparkline = ({ data, color = "#f97316" }) => {
             {/* ResponsiveContainer ajusta o gráfico ao tamanho do pai */}
             <ResponsiveContainer width="99%" height="100%">
                 <LineChart data={processedData}>
+                    <YAxis domain={['dataMin', 'dataMax']} hide={true} />
                     <Line
                         type="monotone" // Suavização da linha
                         dataKey="value" // Chave dos dados a ser plotada

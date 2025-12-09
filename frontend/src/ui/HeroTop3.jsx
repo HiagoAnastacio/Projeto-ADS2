@@ -147,13 +147,12 @@ const HeroTop3 = () => {
         );
     }
 
-    // --- Renderização: Conteúdo Principal ---
     return (
         <section className="relative min-h-[85vh] flex flex-col justify-center items-center bg-gray-50 px-6 pt-20 pb-10">
             {/* --- Background Decorativo --- */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 {/* Bolhas de cor desfocadas para dar um visual moderno */}
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-100/30 rounded-full blur-3xl" />
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary-100/30 rounded-full blur-3xl" />
                 <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-rose-100/30 rounded-full blur-3xl" />
             </div>
 
@@ -175,7 +174,7 @@ const HeroTop3 = () => {
                         >
                             {/* Avatar do Herói com Medalha */}
                             <div className="relative mb-4">
-                                <div className="w-20 h-20 rounded-full bg-gray-200 overflow-hidden ring-4 ring-gray-50 group-hover:ring-emerald-50 transition-all">
+                                <div className="w-20 h-20 rounded-full bg-gray-200 overflow-hidden ring-4 ring-gray-50 group-hover:ring-primary-50 transition-all">
                                     {/* Imagem ou Fallback (Inicial do nome) */}
                                     {hero.image ? (
                                         <img src={hero.image} alt={hero.hero_name} className="w-full h-full object-cover" />
@@ -202,7 +201,7 @@ const HeroTop3 = () => {
                                 <span className="text-4xl font-light text-slate-900 tracking-tighter">
                                     {hero.win_rate}%
                                 </span>
-                                <span className="text-xs font-medium text-emerald-600 mt-1">
+                                <span className="text-xs font-medium text-primary-600 mt-1">
                                     Taxa de Vitória
                                 </span>
                             </div>
